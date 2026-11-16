@@ -23,7 +23,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- long-press the app icon: "SOS" -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
         </activity>
+
+        <!-- home-screen SOS widget -->
+        <receiver
+            android:name=".SosWidget"
+            android:exported="false"
+            android:label="@string/shortcut_sos_long">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sos_widget_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

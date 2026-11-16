@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="4dp">
+
+    <LinearLayout
+        android:id="@+id/widget_sos_btn"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_sos_bg"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/widget_sos_desc"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_sos_text"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06"
+            android:includeFontPadding="false"
+            android:shadowColor="#40000000"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/widget_sos_label"
+            android:textColor="#E6FFFFFF"
+            android:textSize="11sp"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+</FrameLayout>

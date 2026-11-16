@@ -4,4 +4,9 @@
     <string name="title_activity_main">Kwata Tracker</string>
     <string name="package_name">com.kwata.tracker</string>
     <string name="custom_url_scheme">com.kwata.tracker</string>
+    <string name="widget_sos_text">SOS</string>
+    <string name="widget_sos_label">Kwata</string>
+    <string name="widget_sos_desc">Kwata SOS: one tap opens the emergency countdown</string>
+    <string name="shortcut_sos_short">SOS</string>
+    <string name="shortcut_sos_long">Send SOS to my circle</string>
 </resources>
