@@ -57,6 +57,17 @@
       @keyframes x-blink { 50% { opacity: 0.25; } }
 
       /* floating map buttons */
+      .x-wxfx { position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+      .x-wxchip { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 12px); left: max(12px, env(safe-area-inset-left)); display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--r-pill, 999px); color: var(--text-primary); font: var(--type-small); cursor: pointer; max-width: calc(100vw - 96px); white-space: nowrap; overflow: hidden; }
+      .x-wxchip b { font-weight: 600; }
+      .x-wxchip .x-wx-wind { color: var(--text-secondary); }
+      .x-wxchip.is-off { opacity: .6; }
+      @media (max-width: 380px) { .x-wxchip .x-wx-wind { display: none; } }
+      .kt-code { font: 600 34px/1.1 "Geist Mono", ui-monospace, monospace; letter-spacing: .22em; text-align: center; padding: 14px 8px; border-radius: 14px; background: var(--fill-tertiary); color: var(--text-primary); margin: 4px 0; user-select: all; }
+      .kt-codein { font-family: "Geist Mono", ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; font-size: 20px; }
+      .kt-results li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .kt-results .kt-who { display: flex; flex-direction: column; min-width: 0; }
+      .kt-results .kt-who span { color: var(--text-secondary); font: var(--type-small); }
       .x-fabs { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 12px); right: max(12px, env(safe-area-inset-right)); display: grid; gap: 12px; justify-items: end; }
       .x-fabgroup { display: grid; border-radius: var(--r-s); overflow: hidden; }
       .x-fab { width: 46px; height: 46px; display: grid; place-items: center; border: 0; background: none; color: var(--text-primary); cursor: pointer; padding: 0; }
@@ -229,6 +240,8 @@
       <main class="main">
         <!-- full-screen map -->
         <div class="x-map" id="map" role="region" aria-label="Map of you and your circle">Loading map…</div>
+        <canvas class="x-wxfx" id="wxFx" aria-hidden="true"></canvas>
+        <button class="x-wxchip x-glass" id="wxChip" type="button" aria-label="Live weather">Weather…</button>
 
         <!-- top: SOS active pill -->
         <button class="x-sospill" id="sosPill" type="button" hidden aria-label="SOS active. Show tracking details"><i aria-hidden="true"></i>SOS active <span id="sosPillTime">0:00</span></button>
@@ -279,11 +292,11 @@
             <!-- PEOPLE -->
             <div class="x-panel" id="panel-people" role="tabpanel" aria-labelledby="tab-people">
               <div class="x-card" id="profileCard" hidden>
-                <h2>Pick your username</h2>
-                <p>Your circle finds you by it, e.g. @kwata.</p>
+                <h2>Set up your profile</h2>
+                <p>Just your name is enough. We'll make your @username from it, and you can change it anytime.</p>
                 <form id="profileForm" class="x-form" novalidate>
-                  <label class="x-field">Username<input id="pUser" autocapitalize="none" autocomplete="username" placeholder="kwata" maxlength="21" /></label>
-                  <label class="x-field">Name<input id="pName" autocomplete="name" placeholder="Your name" /></label>
+                  <label class="x-field">Your name<input id="pName" autocomplete="name" placeholder="e.g. Thuto Leseane" maxlength="40" /></label>
+                  <label class="x-field">Username (optional)<input id="pUser" autocapitalize="none" autocomplete="username" placeholder="made from your name" maxlength="24" /></label>
                   <label class="x-field">Phone, with country code<input id="pPhone" type="tel" inputmode="tel" value="+267" /></label>
                   <p class="x-msg" id="pMsg"></p>
                   <button class="x-btn x-btn--primary" type="submit">Save profile</button>
@@ -294,25 +307,29 @@
                 <ul class="x-list" id="circleList"></ul>
               </div>
               <div class="x-card">
-                <h2>Add to circle</h2>
+                <h2>Connect with family</h2>
                 <div class="x-seg" id="addSeg">
-                  <button type="button" data-mode="username" aria-pressed="true">Username</button>
-                  <button type="button" data-mode="phone" aria-pressed="false">Phone</button>
-                  <button type="button" data-mode="invite" aria-pressed="false">Invite / QR</button>
+                  <button type="button" data-mode="code" aria-pressed="true">My code</button>
+                  <button type="button" data-mode="enter" aria-pressed="false">Enter code</button>
+                  <button type="button" data-mode="search" aria-pressed="false">Search</button>
                 </div>
-                <form id="addForm" class="x-form" novalidate>
-                  <label class="x-field" id="addUserWrap">Their username<input id="addUser" autocapitalize="none" placeholder="@mpho" /></label>
-                  <label class="x-field" id="addPhoneWrap" hidden>Their phone, with country code<input id="addPhone" type="tel" inputmode="tel" value="+267" /></label>
-                  <div id="addInviteWrap" class="x-form" hidden>
-                    <p>Ask them to scan this or open the link. It sends you a request to join their circle, and you accept it under Invites.</p>
-                    <div class="kt-qr" id="qrBox"></div>
-                    <p class="x-mono kt-link" id="inviteLink"></p>
-                    <div class="x-row"><button class="x-btn x-btn--small" type="button" id="inviteShare">Share invite</button><button class="x-btn x-btn--small" type="button" id="inviteCopy">Copy link</button></div>
-                  </div>
-                  <p class="x-msg" id="addMsg"></p>
-                  <button class="x-btn x-btn--primary" type="submit">Send invite</button>
-                  <p class="fineprint">They'll join your circle only after they accept.</p>
+                <div id="addCodeWrap" class="x-form">
+                  <p>Give this code to a loved one. When they type it in their Kwata app, you're connected instantly.</p>
+                  <p class="kt-code" id="myCode" aria-live="polite">······</p>
+                  <div class="x-row"><button class="x-btn x-btn--small x-btn--primary" type="button" id="codeShare">Share code</button><button class="x-btn x-btn--small" type="button" id="codeCopy">Copy</button><button class="x-btn x-btn--small" type="button" id="codeNew">New code</button></div>
+                  <div class="kt-qr" id="qrBox"></div>
+                  <p class="fineprint" id="codeNote">Codes last 24 hours. Only share it with people you trust.</p>
+                </div>
+                <form id="enterForm" class="x-form" novalidate hidden>
+                  <label class="x-field">Their 6-character code<input id="enterCode" class="kt-codein" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="7" placeholder="K7P2QX" /></label>
+                  <button class="x-btn x-btn--primary" type="submit">Connect</button>
                 </form>
+                <div id="searchWrap" class="x-form" hidden>
+                  <label class="x-field">Username, name or phone<input id="searchQ" type="search" autocapitalize="none" autocomplete="off" placeholder="@mpho or +267 71 000 001" /></label>
+                  <ul class="x-list kt-results" id="searchList"></ul>
+                  <p class="fineprint">They'll get a request and join once they tap Accept.</p>
+                </div>
+                <p class="x-msg" id="addMsg"></p>
               </div>
             </div>
 
@@ -432,7 +449,7 @@
               <button type="button" data-layer="Street" aria-pressed="true">Street</button>
               <button type="button" data-layer="Satellite" aria-pressed="false">Satellite</button>
             </div>
-            <label class="x-field">Map provider<select id="mapProv"><option value="leaflet">Street / Satellite (OpenStreetMap + Esri)</option><option value="google">Google Maps (needs API key)</option></select></label>
+            <label class="x-field">Map provider<select id="mapProv"><option value="leaflet">Street (CARTO HD) / Satellite hybrid (Esri)</option><option value="google">Google Maps (needs API key)</option></select></label>
             <label class="x-field">Google Maps API key (for later)<input id="gKey" autocomplete="off" placeholder="Not set" /></label>
             <p class="x-msg" id="mapMsg"></p>
           </div>
@@ -645,7 +662,8 @@
 var SUPABASE_URL = "https://otemiymlkjuakqpgalwg.supabase.co";
 var SUPABASE_ANON_KEY = "sb_publishable_bjImYZEUvMV-mVHLRXf78A_Gl2_feaK";
 var SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-var COMPANY_NAME = "Kwata";
+var COMPANY_NAME = "Kwata Enterprise";
+var PUBLIC_URL = "https://kwatawarfare-sketch.github.io/kwata-tracker/";
 
 /* ================= shared storage ================= */
 window.KStore = (function () {
@@ -659,13 +677,146 @@ window.KStore = (function () {
   };
 })();
 
+/* ================= KWeather =================
+   Live weather for the area on screen, no API keys:
+   - Open-Meteo current conditions (temperature, code, wind, rain, snow, cloud)
+   - RainViewer live radar, animated over the last ~hour
+   - A canvas effect that simulates the real conditions on the map: rain angled by the wind,
+     snow, thunder flashes, fog and drifting cloud shade. Refreshes every 10 minutes and when
+     you pan more than ~5 km. Respects reduced-motion. */
+window.KWeather = (function () {
+  var map = null, chip = null, cv = null, ctx = null, wx = null, lastAt = null, timer = null, raf = 0;
+  var radar = [], rIdx = 0, rTimer = null, parts = [], flash = 0, W = 0, H = 0, dpr = 1;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function on() { return window.KStore ? window.KStore.get("weatherFx", true) !== false : true; }
+  var NAMES = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Icy fog", 51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle", 61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain", 71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Showers", 81: "Heavy showers", 82: "Violent showers", 85: "Snow showers", 86: "Heavy snow showers", 95: "Thunderstorm", 96: "Storm with hail", 99: "Storm with hail" };
+  function icon(c, day) {
+    if (c >= 95) return "⛈️"; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return "🌨️";
+    if (c >= 51 && c <= 67 || c >= 80 && c <= 82) return "🌧️"; if (c === 45 || c === 48) return "🌫️";
+    if (c === 3) return "☁️"; if (c === 2) return day ? "⛅" : "☁️"; return day ? "☀️" : "🌙";
+  }
+  function kind(c) {
+    if (c >= 95) return "storm"; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return "snow";
+    if (c >= 51 && c <= 67 || c >= 80 && c <= 82) return "rain"; if (c === 45 || c === 48) return "fog"; return "dry";
+  }
+  function center() { var p = window.KT && window.KT.last && window.KT.last(); if (p) return { lat: p.lat, lng: p.lng }; if (map) { var c = map.getCenter(); return { lat: c.lat, lng: c.lng }; } return null; }
+  function viewCenter() { if (!map) return center(); var c = map.getCenter(); return { lat: c.lat, lng: c.lng }; }
+  function fetchWx(pt) {
+    if (!pt) return;
+    lastAt = pt;
+    var u = "https://api.open-meteo.com/v1/forecast?latitude=" + pt.lat.toFixed(3) + "&longitude=" + pt.lng.toFixed(3) +
+      "&current=temperature_2m,apparent_temperature,weather_code,is_day,precipitation,rain,showers,snowfall,cloud_cover,wind_speed_10m,wind_direction_10m&timezone=auto";
+    fetch(u).then(function (r) { return r.json(); }).then(function (j) { if (j && j.current) { wx = j.current; render(); seed(); } }).catch(function () {});
+  }
+  function render() {
+    if (!chip) return;
+    if (!wx) { chip.textContent = "Weather…"; return; }
+    var c = wx.weather_code, t = Math.round(wx.temperature_2m);
+    chip.innerHTML = '<span aria-hidden="true">' + icon(c, wx.is_day) + '</span><b>' + t + '°</b><span>' + (NAMES[c] || "Weather") + '</span><span class="x-wx-wind">' + Math.round(wx.wind_speed_10m) + ' km/h</span>';
+    chip.setAttribute("aria-label", (NAMES[c] || "Weather") + ", " + t + " degrees, wind " + Math.round(wx.wind_speed_10m) + " kilometres an hour. Tap to " + (on() ? "hide" : "show") + " live weather on the map");
+    chip.classList.toggle("is-off", !on());
+  }
+  /* ---- live radar ---- */
+  function loadRadar() {
+    clearRadar();
+    if (!map || !on() || !window.L) return;
+    fetch("https://api.rainviewer.com/public/weather-maps.json").then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.radar || !on()) return;
+      var frames = (j.radar.past || []).concat(j.radar.nowcast || []).slice(-6);
+      radar = frames.map(function (f) {
+        return L.tileLayer(j.host + f.path + "/256/{z}/{x}/{y}/2/1_1.png", { opacity: 0, maxNativeZoom: 7, maxZoom: 20, zIndex: 300, attribution: "Radar © RainViewer" }).addTo(map);
+      });
+      if (!radar.length) return;
+      rIdx = radar.length - 1; radar[rIdx].setOpacity(0.55);
+      if (!reduce) rTimer = setInterval(function () { radar[rIdx].setOpacity(0); rIdx = (rIdx + 1) % radar.length; radar[rIdx].setOpacity(0.55); }, 700);
+    }).catch(function () {});
+  }
+  function clearRadar() { if (rTimer) clearInterval(rTimer); rTimer = null; radar.forEach(function (l) { try { map.removeLayer(l); } catch (e) {} }); radar = []; }
+  /* ---- simulated conditions ---- */
+  function size() { if (!cv) return; dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function seed() {
+    parts = [];
+    if (!wx || !on()) return;
+    var k = kind(wx.weather_code), p = (wx.precipitation || 0) + (wx.rain || 0) + (wx.showers || 0), n = 0;
+    if (k === "rain" || k === "storm") n = Math.min(420, 90 + p * 70);
+    if (k === "snow") n = Math.min(260, 70 + (wx.snowfall || 0) * 120);
+    n = Math.round(n * Math.min(1, (W * H) / (1280 * 800) + 0.35));
+    for (var i = 0; i < n; i++) parts.push({ x: Math.random() * W, y: Math.random() * H, z: 0.4 + Math.random() * 0.6, s: Math.random() * 6.28 });
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  var cloudX = 0;
+  function tick() {
+    raf = 0;
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+    if (!wx || !on()) return;
+    var k = kind(wx.weather_code), ws = wx.wind_speed_10m || 0, wd = (wx.wind_direction_10m || 0) * Math.PI / 180;
+    var vx = -Math.sin(wd) * Math.min(ws, 60) / 12, dark = document.documentElement.matches("[data-theme=dark]") || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    /* cloud shade drifting with the wind */
+    var cc = (wx.cloud_cover || 0) / 100;
+    if (cc > 0.35 || k !== "dry") {
+      cloudX += vx * 0.4;
+      var g = ctx.createRadialGradient(W * 0.5 + Math.sin(cloudX / 300) * W * 0.3, H * 0.3, 0, W * 0.5, H * 0.4, Math.max(W, H));
+      var a = Math.min(0.22, cc * 0.16 + (k === "storm" ? 0.08 : 0));
+      g.addColorStop(0, "rgba(90,100,115," + (a * 0.6) + ")"); g.addColorStop(1, "rgba(60,66,78," + a + ")");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    if (k === "fog") { ctx.fillStyle = "rgba(220,224,230,0.28)"; ctx.fillRect(0, 0, W, H); }
+    if (k === "rain" || k === "storm") {
+      ctx.strokeStyle = dark ? "rgba(190,210,235,0.55)" : "rgba(70,100,140,0.45)"; ctx.lineWidth = 1.1; ctx.beginPath();
+      parts.forEach(function (q) {
+        var sp = 14 * q.z; ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + vx * 2.2, q.y + sp * 1.3);
+        if (!reduce) { q.y += sp; q.x += vx * q.z; if (q.y > H) { q.y = -20; q.x = Math.random() * W; } if (q.x > W) q.x = 0; if (q.x < 0) q.x = W; }
+      });
+      ctx.stroke();
+    }
+    if (k === "snow") {
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      parts.forEach(function (q) {
+        ctx.beginPath(); ctx.arc(q.x, q.y, 1.2 + q.z * 2, 0, 6.28); ctx.fill();
+        if (!reduce) { q.s += 0.02; q.y += 1.2 * q.z; q.x += Math.sin(q.s) * 0.6 + vx * 0.3; if (q.y > H) { q.y = -5; q.x = Math.random() * W; } }
+      });
+    }
+    if (k === "storm" && !reduce) {
+      if (flash <= 0 && Math.random() < 0.004) flash = 1;
+      if (flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (flash * 0.45) + ")"; ctx.fillRect(0, 0, W, H); flash -= 0.08; }
+    }
+    if (!reduce && (k !== "dry" || cc > 0.35)) raf = requestAnimationFrame(tick);
+  }
+  function toggle() {
+    var v = !on(); window.KStore.set("weatherFx", v); render();
+    if (v) { loadRadar(); seed(); } else { clearRadar(); parts = []; if (ctx) ctx.clearRect(0, 0, W, H); }
+    if (window.KT && window.KT.toast) window.KT.toast(v ? "Live weather on" : "Live weather off");
+  }
+  function dist(a, b) { var R = 6371, dLa = (b.lat - a.lat) * Math.PI / 180, dLo = (b.lng - a.lng) * Math.PI / 180; var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLo / 2) * Math.sin(dLo / 2); return 2 * R * Math.asin(Math.sqrt(h)); }
+  return {
+    attach: function (m) {
+      if (map) return; /* one full-screen map */
+      map = m;
+      chip = document.getElementById("wxChip"); cv = document.getElementById("wxFx");
+      if (cv) { ctx = cv.getContext("2d"); size(); addEventListener("resize", function () { size(); seed(); }); }
+      if (chip) chip.addEventListener("click", toggle);
+      render();
+      setTimeout(function () { fetchWx(center()); loadRadar(); }, 600);
+      timer = setInterval(function () { fetchWx(viewCenter()); if (on()) loadRadar(); }, 10 * 60 * 1000);
+      var deb = 0;
+      m.on("moveend", function () { clearTimeout(deb); deb = setTimeout(function () { var c = viewCenter(); if (!lastAt || dist(lastAt, c) > 5) fetchWx(c); }, 800); });
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) { fetchWx(viewCenter()); seed(); } });
+    },
+    now: function () { return wx; }
+  };
+})();
+
 /* ================= MapProvider =================
    Every map in the app is created through MapProvider.create(), so another provider (Google Maps)
    can be plugged in later. Settings: KStore "mapProvider" ("leaflet" | "google") and "googleMapsKey". */
 window.MapProvider = (function () {
+  /* High-resolution basemaps, no API keys needed. {r} loads @2x retina tiles on sharp screens. */
   var TILES = {
-    street: { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, className: "x-tiles--street", attribution: "© OpenStreetMap contributors" } },
-    satellite: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 19, attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community" } }
+    street: { url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", opts: { maxZoom: 20, subdomains: "abcd", className: "x-tiles--street", attribution: "© OpenStreetMap contributors © CARTO" } },
+    satellite: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics" } },
+    labels: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, pane: "overlayPane" } },
+    roads: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, opacity: 0.85, pane: "overlayPane" } }
   };
   var maps = [];
   function hasL() { return typeof window.L !== "undefined"; }
@@ -679,7 +830,7 @@ window.MapProvider = (function () {
         /* No zoom or layer controls: pinch to zoom, and the floating glass buttons switch style and recenter. */
         var m = L.map(el, { zoomControl: false, attributionControl: false }).setView([lat, lng], zoom);
         L.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
-        var base = { "Street": L.tileLayer(TILES.street.url, TILES.street.opts), "Satellite": L.tileLayer(TILES.satellite.url, TILES.satellite.opts) };
+        var base = { "Street": L.tileLayer(TILES.street.url, TILES.street.opts), "Satellite": L.layerGroup([L.tileLayer(TILES.satellite.url, TILES.satellite.opts), L.tileLayer(TILES.roads.url, TILES.roads.opts), L.tileLayer(TILES.labels.url, TILES.labels.opts)]) };
         var pick = window.KStore.get("mapLayer", "Street");
         m._ktBase = base; m._ktCur = (base[pick] || base.Street).addTo(m);
         m.ktRecenter = function () {
@@ -688,6 +839,7 @@ window.MapProvider = (function () {
           else if (window.KT) window.KT.toast("Location not known yet");
         };
         maps.push(m);
+        try { if (window.KWeather) window.KWeather.attach(m); } catch (e) {}
         return m;
       }
     },
@@ -738,7 +890,8 @@ window.Backend = (function () {
     emit: function (ev) { subs.slice().forEach(function (f) { try { f(ev); } catch (e) { console.error(e); } }); },
     member: function (id) { return B.members.filter(function (m) { return m.id === id; })[0]; },
     invite: function (id) { return B.invites.filter(function (i) { return String(i.id) === String(id); })[0]; },
-    inviteLink: function () { return location.origin + location.pathname + "?invite=" + encodeURIComponent(B.me.username || ""); }
+    code: null,
+    inviteLink: function () { return PUBLIC_URL + (B.code ? "?code=" + B.code : "?invite=" + encodeURIComponent(B.me.username || "")); }
   };
   function cleanUser(u) { return String(u || "").trim().replace(/^@/, "").toLowerCase(); }
   function cleanPhone(p) { p = String(p || "").replace(/[^\d+]/g, ""); if (p.indexOf("00") === 0) p = "+" + p.slice(2); if (p && p[0] !== "+") p = "+" + p; return p; }
@@ -913,14 +1066,28 @@ window.Backend = (function () {
     var r = await Sb.client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } });
     if (r.error) throw r.error;
   };
+  function slug(x) { return String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().replace(/^@/, "").toLowerCase().replace(/[\s.\-]+/g, "_").replace(/[^a-z0-9_]/g, "").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 20); }
   B.register = async function (p) {
-    var u = cleanUser(p.username);
-    if (!/^[a-z0-9_]{3,20}$/.test(u)) throw new Error("Use 3–20 letters, numbers or _");
-    B.me.username = u; B.me.name = String(p.name || "").trim().slice(0, 40); B.me.phone = p.phone ? cleanPhone(p.phone) : B.me.phone;
+    var name = String(p.name || "").trim().slice(0, 40);
+    var typed = String(p.username || "").trim();
+    var u = slug(typed || name);
+    if (!name && !u) throw new Error("Enter your name");
+    if (u.length < 3) u = (u + "kwata").slice(0, 8) + Math.floor(100 + Math.random() * 900);
+    var ph = p.phone ? cleanPhone(p.phone) : "";
+    if (ph.replace(/\D/g, "").length <= 3) ph = ""; /* just the +267 prefix */
+    B.me.name = name || u; B.me.phone = ph || B.me.phone || "";
     if (B.mode === "supabase" && Sb.uid) {
-      var r = await Sb.client.from("profiles").upsert({ id: Sb.uid, username: u, name: B.me.name, phone: B.me.phone || null });
-      if (r.error) throw new Error(r.error.code === "23505" ? "That username is taken" : r.error.message);
+      var tries = 0, base = u, r;
+      while (true) {
+        r = await Sb.client.from("profiles").upsert({ id: Sb.uid, username: u, name: B.me.name, phone: B.me.phone || null });
+        if (!r.error) break;
+        if (r.error.code === "23505" && /phone/.test(r.error.message || "")) throw new Error("That phone number is already on another account");
+        if (r.error.code !== "23505" || ++tries > 4) throw new Error(r.error.code === "23505" ? "That username is taken, try another" : (r.error.message || "Could not save"));
+        if (typed && tries === 1 && slug(typed) === base) { /* their own pick clashed: suggest with digits */ }
+        u = base.slice(0, 17) + Math.floor(10 + Math.random() * 990);
+      }
     }
+    B.me.username = u;
     window.KStore.set("username", u); window.KStore.set("name", B.me.name); window.KStore.set("phone", B.me.phone || "");
     B.emit({ type: "me" });
     return B.me;
@@ -961,6 +1128,32 @@ window.Backend = (function () {
     return user;
   };
   B.addMember = B.sendInvite;
+  function live() { if (B.mode === "demo") throw new Error("Offline demo mode: connect to the internet and reopen the app"); if (!Sb.uid) throw new Error("Connecting to Kwata… try again in a moment"); }
+  function rpcErr(e) { var m = (e && e.message) || "Something went wrong"; if (/expired|not found/.test(m)) return new Error("That code didn't work. Check it, or ask for a new one."); if (/own code/.test(m)) return new Error("That's your own code"); if (/profile first/.test(m)) return new Error("Save your name first"); return new Error(m); }
+  B.myCode = async function (fresh) {
+    live(); if (!B.me.username) throw new Error("Save your name first");
+    if (!fresh) { var r0 = await Sb.client.from("connect_codes").select("code,expires_at").eq("user_id", Sb.uid).maybeSingle(); if (r0.data && Date.parse(r0.data.expires_at) > Date.now() + 3600000) { B.code = r0.data.code; return B.code; } }
+    var r = await Sb.client.rpc("create_connect_code"); if (r.error) throw rpcErr(r.error); B.code = r.data; return B.code;
+  };
+  B.redeemCode = async function (c) {
+    live(); if (!B.me.username) throw new Error("Save your name first");
+    c = String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); if (c.length !== 6) throw new Error("Codes have 6 characters");
+    var r = await Sb.client.rpc("redeem_connect_code", { c: c }); if (r.error) throw rpcErr(r.error);
+    await Sb.loadCircle(); await Sb.loadInvites(); B.emit({ type: "members" });
+    return (r.data && r.data[0]) || { username: "them" };
+  };
+  B.search = async function (q) {
+    live(); q = String(q || "").trim(); if (q.replace(/^@/, "").length < 2) return [];
+    var r = await Sb.client.rpc("search_profiles", { q: q }); if (r.error) throw rpcErr(r.error); return r.data || [];
+  };
+  B.inviteId = async function (p) {
+    live(); if (!B.me.username) throw new Error("Save your name first");
+    if (B.member(p.id)) throw new Error("Already in your circle");
+    var pend = pendingWith(function (x) { return x.id === p.id; }); if (pend) throw pendingError(pend);
+    var r = await Sb.client.from("circle_invites").insert({ from_id: Sb.uid, to_id: p.id, status: "pending" });
+    if (r.error) throw new Error(r.error.code === "23505" ? "Request already sent" : r.error.message);
+    await Sb.loadInvites(); return p;
+  };
   B.acceptInvite = async function (id) {
     var inv = B.invite(id);
     if (!inv || !inv.incoming) throw new Error("Invite not found");
@@ -1472,7 +1665,7 @@ window.Backend = (function () {
     $("profileCard").hidden = !!u;
     $("pUser").value = u || ""; $("pName").value = B.me.name || ""; $("pPhone").value = B.me.phone || "+267";
     $("sUser").value = u || ""; $("sName").value = B.me.name || ""; $("sPhone").value = B.me.phone || "+267";
-    renderInvite();
+    qrFor = null; renderInvite();
   }
   async function saveProfile(user, name, phone, msgEl) {
     msgEl.classList.remove("is-err"); msgEl.textContent = "Saving…";
@@ -1558,61 +1751,94 @@ window.Backend = (function () {
   }
   $("buzzAll").addEventListener("click", function () { buzz("all"); });
 
-  /* ---------- add member ---------- */
-  var addMode = "username";
+  /* ---------- connect: my code / enter code / search ---------- */
+  var addMode = "code";
+  function addMsg(t, err) { var m = $("addMsg"); m.classList.toggle("is-err", !!err); m.textContent = t || ""; }
   $("addSeg").addEventListener("click", function (e) {
     var b = e.target.closest("[data-mode]"); if (!b) return; addMode = b.dataset.mode;
     document.querySelectorAll("#addSeg button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
-    $("addUserWrap").hidden = addMode !== "username"; $("addPhoneWrap").hidden = addMode !== "phone"; $("addInviteWrap").hidden = addMode !== "invite";
-    $("addForm").querySelector("[type=submit]").hidden = addMode === "invite";
-    if (addMode === "invite") renderInvite();
+    $("addCodeWrap").hidden = addMode !== "code"; $("enterForm").hidden = addMode !== "enter"; $("searchWrap").hidden = addMode !== "search";
+    addMsg("");
+    if (addMode === "code") renderInvite();
+    if (addMode === "enter") setTimeout(function () { $("enterCode").focus(); }, 50);
+    if (addMode === "search") setTimeout(function () { $("searchQ").focus(); }, 50);
   });
-  $("addForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    var msg = $("addMsg"); msg.classList.remove("is-err"); msg.textContent = "Sending invite…";
-    try {
-      var m = await B.sendInvite(addMode === "phone" ? { phone: $("addPhone").value } : { username: $("addUser").value });
-      msg.textContent = "Invite sent to " + at(m) + ". They join once they accept."; $("addUser").value = ""; $("addPhone").value = "+267";
-    } catch (er) { msg.classList.add("is-err"); msg.textContent = er.message || "Could not send invite"; }
+  $("enterCode").addEventListener("input", function () {
+    var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6); if (this.value !== v) this.value = v;
+    if (v.length === 6) $("enterForm").requestSubmit ? $("enterForm").requestSubmit() : null;
+  });
+  var redeeming = false;
+  $("enterForm").addEventListener("submit", async function (e) {
+    e.preventDefault(); if (redeeming) return;
+    redeeming = true; addMsg("Connecting…");
+    try { var who = await B.redeemCode($("enterCode").value); $("enterCode").value = ""; addMsg("Connected with " + (who.name || "@" + who.username) + " 🎉"); KT.toast("Connected"); renderMembers(); }
+    catch (er) { addMsg(er.message || "Could not connect", true); }
+    redeeming = false;
+  });
+  var sTimer = 0, sSeq = 0;
+  $("searchQ").addEventListener("input", function () {
+    clearTimeout(sTimer); var q = this.value, seq = ++sSeq;
+    if (q.trim().replace(/^@/, "").length < 2) { $("searchList").innerHTML = ""; addMsg(""); return; }
+    sTimer = setTimeout(async function () {
+      try {
+        var rows = await B.search(q); if (seq !== sSeq) return;
+        $("searchList").innerHTML = rows.length ? rows.map(function (r, i) {
+          var inC = B.member(r.id);
+          return "<li><span class='kt-who'><b>" + esc(r.name || r.username) + "</b><span>@" + esc(r.username) + "</span></span>" +
+            (inC ? "<span class='fineprint'>In circle</span>" : "<button class='x-btn x-btn--small x-btn--primary' type='button' data-i='" + i + "'>Add</button>") + "</li>";
+        }).join("") : "<li><span class='fineprint'>No one found. Share your code instead.</span></li>";
+        $("searchList")._rows = rows; addMsg("");
+      } catch (er) { addMsg(er.message || "Search failed", true); }
+    }, 350);
+  });
+  $("searchList").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-i]"); if (!b) return;
+    var r = this._rows[+b.dataset.i]; b.disabled = true; b.textContent = "Sending…";
+    try { await B.inviteId(r); b.textContent = "Requested"; addMsg("Request sent to @" + r.username + ". You're connected when they tap Accept."); }
+    catch (er) { b.disabled = false; b.textContent = "Add"; addMsg(er.message || "Could not add", true); }
   });
 
-  /* ---------- invite + QR ---------- */
-  var qr = null, qrFor = null;
-  function renderInvite() {
+  /* ---------- my code + QR ---------- */
+  var qrFor = null, codeBusy = false;
+  async function renderInvite(fresh) {
     var box = $("qrBox"); if (!box) return;
-    if (!B.me.username) { box.innerHTML = "<p>Pick a username first.</p>"; $("inviteLink").textContent = ""; qrFor = null; return; }
+    if (!B.me.username) { $("myCode").textContent = "······"; $("codeNote").textContent = "Save your name above to get your code."; box.innerHTML = ""; qrFor = null; return; }
+    if (codeBusy) return; codeBusy = true;
+    try { await B.myCode(fresh); $("myCode").textContent = B.code; $("codeNote").textContent = "Codes last 24 hours. Only share it with people you trust."; }
+    catch (er) { $("myCode").textContent = "······"; $("codeNote").textContent = er.message || "Could not get a code"; codeBusy = false; return; }
+    codeBusy = false;
     var link = B.inviteLink();
-    $("inviteLink").textContent = link;
     if (qrFor === link) return;
     qrFor = link; box.innerHTML = "";
-    if (typeof window.QRCode === "undefined") { box.innerHTML = "<p>QR code unavailable offline — share the link instead.</p>"; return; }
-    try { qr = new QRCode(box, { text: link, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M }); }
-    catch (e) { box.innerHTML = "<p>Could not draw QR code.</p>"; }
+    if (typeof window.QRCode === "undefined") return;
+    try { new QRCode(box, { text: link, width: 180, height: 180, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
   }
-  $("inviteShare").addEventListener("click", function () {
-    if (!B.me.username) { KT.toast("Pick a username first"); return; }
-    var text = "Join my Kwata Tracker circle: " + B.inviteLink();
-    if (navigator.share) navigator.share({ title: "Kwata Tracker invite", text: text }).catch(function () {});
-    else KT.copy(text);
+  function codeText() { return "Connect with me on Kwata Tracker. My code: " + B.code + "\nOpen the app, tap Connect › Enter code. Or tap: " + B.inviteLink(); }
+  $("codeShare").addEventListener("click", function () {
+    if (!B.code) { KT.toast("No code yet"); return; }
+    if (navigator.share) navigator.share({ title: "Kwata Tracker", text: codeText() }).catch(function () {}); else KT.copy(codeText());
   });
-  $("inviteCopy").addEventListener("click", function () { if (B.me.username) KT.copy(B.inviteLink()); else KT.toast("Pick a username first"); });
-  /* Opening ?invite=<username> sends that user an invite request; nobody is linked until they accept. */
+  $("codeCopy").addEventListener("click", function () { if (B.code) KT.copy(B.code); else KT.toast("No code yet"); });
+  $("codeNew").addEventListener("click", function () { qrFor = null; renderInvite(true); });
+  /* Opening ?code=XXXXXX connects instantly; the older ?invite=<username> sends a request. */
   async function checkInvite() {
-    var qs = new URLSearchParams(location.search), raw = qs.get("invite");
+    var qs = new URLSearchParams(location.search), code = qs.get("code"), raw = qs.get("invite");
     if (!raw) { var h = /#invite=([^&]+)/.exec(location.hash); if (h) { try { raw = decodeURIComponent(h[1]); } catch (e) { raw = h[1]; } } }
-    if (!raw) return;
-    qs.delete("invite");
+    if (!raw && !code) return;
+    qs.delete("invite"); qs.delete("code");
     try { var rest = qs.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "")); } catch (e) {}
+    KT.go("circle");
+    if (code) {
+      var seg = document.querySelector("#addSeg [data-mode=enter]"); if (seg) seg.click();
+      $("enterCode").value = String(code).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+      if (!B.me.username) { addMsg("Save your name, then tap Connect."); return; }
+      $("enterForm").dispatchEvent(new Event("submit", { cancelable: true }));
+      return;
+    }
     var u = B.cleanUser(raw);
     if (!u || u === B.me.username) return;
-    KT.go("circle");
-    var seg = document.querySelector("#addSeg [data-mode=username]"); if (seg) seg.click();
-    $("addUser").value = u;
-    var msg = $("addMsg"); msg.classList.remove("is-err");
-    if (!B.me.username) { msg.textContent = "Pick your username, then tap Send invite to ask @" + u + " to join circles."; return; }
-    msg.textContent = "Sending an invite request to @" + u + "…";
-    try { await B.sendInvite({ username: u }); $("addUser").value = ""; msg.textContent = "Invite sent to @" + u + ". You're connected once they accept."; }
-    catch (er) { msg.classList.add("is-err"); msg.textContent = er.message || "Could not send invite"; }
+    var s2 = document.querySelector("#addSeg [data-mode=search]"); if (s2) s2.click();
+    $("searchQ").value = u; $("searchQ").dispatchEvent(new Event("input"));
   }
 
   /* ---------- circle map ---------- */
@@ -1719,7 +1945,7 @@ window.Backend = (function () {
   });
   setInterval(renderMembers, 30000);
 
-  $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", an African defence company founded by Thuto Leseane.";
+  $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", a defence technology company under Motswana Intelligence, founded by Thuto Leseane.";
   renderMe(); renderMode(); renderMembers(); renderInvites();
   B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
 })();
