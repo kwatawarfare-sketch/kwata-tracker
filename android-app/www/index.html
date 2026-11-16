@@ -1,0 +1,1729 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Kwata Tracker</title>
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1d1d1f" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kwata Tracker" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4 8 13v17c0 15 10 26 24 30 14-4 24-15 24-30V13L32 4z' fill='%23e5252b'/%3E%3Cpath d='M32 18v18M32 42v4' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap"
+    />
+    <link rel="stylesheet" href="hark.css" />
+    <link rel="stylesheet" href="hark-hero.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      /* Kwata Tracker: a full-screen, Find My style app. Everything sits over one map. */
+      :root { --x-blue: #0a84ff; --sheet-vis: 180px; --sheet-hidden: 0px; --x-dur-sheet: 380ms; }
+      html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+      body { position: fixed; inset: 0; width: 100%; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+      input, textarea, select, .x-mono, .x-log { -webkit-user-select: text; user-select: text; }
+      [hidden] { display: none !important; }
+      button { font: inherit; color: inherit; }
+      .x-glass { background: var(--mat-agent); -webkit-backdrop-filter: var(--hark-blur); backdrop-filter: var(--hark-blur); border: 1px solid var(--stroke-secondary); box-shadow: var(--hark-shadow); }
+
+      /* map */
+      .x-map { position: fixed; inset: 0; z-index: 0; background: var(--fill-tertiary); color: var(--text-secondary); display: grid; place-items: center; text-align: center; padding: 24px; font: var(--type-small); }
+      .x-map.leaflet-container { display: block; padding: 0; font: var(--type-caption); }
+      :root[data-theme="dark"] .x-tiles--street { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55); }
+      @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .x-tiles--street { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55); } }
+      .leaflet-control-attribution.leaflet-control { margin: 0 max(8px, env(safe-area-inset-right)) 8px 0; padding: 2px 8px; max-width: 60vw; border-radius: 8px; background: var(--mat-regular); -webkit-backdrop-filter: var(--hark-blur); backdrop-filter: var(--hark-blur); color: var(--text-secondary); font: var(--type-caption); }
+      .leaflet-control-attribution a { color: inherit; }
+      .leaflet-bottom.leaflet-right { bottom: var(--sheet-vis); transition: bottom var(--x-dur-sheet) var(--ease-out), opacity var(--dur-quick); }
+      :root[data-sheet="full"] .leaflet-bottom.leaflet-right { opacity: 0; }
+      @media (min-width: 761px) { .leaflet-bottom.leaflet-right { bottom: 0; } :root[data-sheet="full"] .leaflet-bottom.leaflet-right { opacity: 1; } }
+
+      /* avatar markers and the self dot */
+      .x-av { position: absolute; left: 0; top: 0; transform: translate(-50%, -22px); display: grid; justify-items: center; gap: 4px; cursor: pointer; }
+      .x-av b { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--fill-primary); color: var(--text-primary-on); font: var(--weight-bold) 17px/1 var(--sans); border: 3px solid var(--fill-primary-on); box-shadow: 0 2px 10px rgb(0 0 0 / 0.28); }
+      .x-av span { padding: 2px 8px; border-radius: var(--r-pill); background: var(--mat-agent); -webkit-backdrop-filter: var(--hark-blur); backdrop-filter: var(--hark-blur); color: var(--text-primary); font: var(--type-tag); white-space: nowrap; box-shadow: 0 1px 4px rgb(0 0 0 / 0.2); }
+      .x-av.is-sos b { background: var(--fill-system-red); color: var(--hero-text); }
+      .x-av.is-sos b::before, .x-av.is-sos b::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 3px solid var(--fill-system-red); animation: x-ring 1.6s var(--ease-out) infinite; pointer-events: none; }
+      .x-av.is-sos b::after { animation-delay: 0.8s; }
+      .x-av.is-sos span { background: var(--fill-system-red); color: var(--hero-text); }
+      .x-medot { position: absolute; left: 0; top: 0; width: 22px; height: 22px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--x-blue); border: 3px solid var(--hero-text); animation: x-halo 2.4s ease-out infinite; }
+      .x-medot.is-sos { animation: x-halo-sos 1.2s ease-out infinite; }
+      @keyframes x-halo { 0% { box-shadow: 0 1px 6px rgb(0 0 0 / 0.35), 0 0 0 0 color-mix(in srgb, var(--x-blue) 45%, transparent); } 100% { box-shadow: 0 1px 6px rgb(0 0 0 / 0.35), 0 0 0 20px color-mix(in srgb, var(--x-blue) 0%, transparent); } }
+      @keyframes x-halo-sos { 0% { box-shadow: 0 1px 6px rgb(0 0 0 / 0.35), 0 0 0 0 color-mix(in srgb, var(--fill-system-red) 70%, transparent); } 100% { box-shadow: 0 1px 6px rgb(0 0 0 / 0.35), 0 0 0 26px color-mix(in srgb, var(--fill-system-red) 0%, transparent); } }
+      @keyframes x-ring { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.8); opacity: 0; } }
+      @keyframes x-blink { 50% { opacity: 0.25; } }
+
+      /* floating map buttons */
+      .x-fabs { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 12px); right: max(12px, env(safe-area-inset-right)); display: grid; gap: 12px; justify-items: end; }
+      .x-fabgroup { display: grid; border-radius: var(--r-s); overflow: hidden; }
+      .x-fab { width: 46px; height: 46px; display: grid; place-items: center; border: 0; background: none; color: var(--text-primary); cursor: pointer; padding: 0; }
+      .x-fab svg { width: 22px; height: 22px; }
+      .x-fabgroup .x-fab + .x-fab { border-top: 1px solid var(--stroke-primary); }
+      .x-fab:active { background: var(--hover-wash); }
+      .x-fab--round { width: 52px; height: 52px; border-radius: 50%; color: var(--fill-system-red); }
+      .x-fab--round svg { width: 24px; height: 24px; }
+      .x-fab.is-on { color: var(--x-blue); }
+
+      /* SOS active pill (top) and SOS capsule (above the sheet) */
+      .x-sospill { position: fixed; z-index: 30; top: calc(env(safe-area-inset-top) + 12px); left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) var(--size-small)/1 var(--sans); white-space: nowrap; box-shadow: 0 6px 20px color-mix(in srgb, var(--fill-system-red) 40%, transparent); cursor: pointer; }
+      .x-sospill i { width: 8px; height: 8px; border-radius: 50%; background: var(--hero-text); animation: x-blink 1s infinite; }
+      .x-sospill span { font-variant-numeric: tabular-nums; font-weight: var(--weight-regular); }
+      .x-soscap { position: fixed; z-index: 15; left: max(16px, env(safe-area-inset-left)); bottom: calc(var(--sheet-vis) + 12px); display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 10px; border: 0; border-radius: var(--r-pill); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) 18px/1 var(--sans); letter-spacing: 0.06em; cursor: pointer; box-shadow: 0 8px 24px color-mix(in srgb, var(--fill-system-red) 45%, transparent); transition: bottom var(--x-dur-sheet) var(--ease-out), opacity var(--dur-quick), transform var(--dur-quick); }
+      .x-soscap svg { width: 34px; height: 34px; flex: none; }
+      .x-soscap:active { transform: scale(0.95); }
+      .x-soscap.is-active svg { animation: x-blink 1s infinite; }
+      :root.x-dragging .x-soscap, :root.x-dragging .leaflet-bottom.leaflet-right { transition: none; }
+      :root[data-sheet="full"] .x-soscap { opacity: 0; pointer-events: none; }
+      @media (min-width: 761px) { :root[data-sheet="full"] .x-soscap { opacity: 1; pointer-events: auto; bottom: 24px; left: 432px; } }
+
+      /* bottom sheet */
+      .x-sheet { position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; height: calc(100vh - env(safe-area-inset-top) - 10px); height: calc(100dvh - env(safe-area-inset-top) - 10px); display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); border-bottom: 0; border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -6px 30px rgb(0 0 0 / 0.16); transform: translateY(60%); transition: transform var(--x-dur-sheet) var(--ease-out); will-change: transform; }
+      :root.x-dragging .x-sheet { transition: none; }
+      @media (min-width: 761px) { .x-sheet { left: max(16px, env(safe-area-inset-left)); right: auto; width: 400px; } }
+      .x-sheet__grab { flex: none; display: grid; place-items: center; width: 100%; height: 44px; margin-bottom: -16px; padding: 0 0 16px; border: 0; background: none; cursor: grab; touch-action: none; }
+      .x-sheet__grab span { width: 38px; height: 5px; border-radius: 3px; background: var(--text-tertiary); }
+      .x-sheet__head { flex: none; display: grid; gap: 10px; padding: 0 max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); touch-action: none; }
+      .x-sheet__title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; }
+      .x-sheet__title h1 { font: var(--weight-bold) var(--size-heading)/1.2 var(--sans); letter-spacing: -0.01em; }
+      .x-sheet__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-secondary); font: var(--type-small); min-width: 0; }
+      .x-sheet__body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: grid; align-content: start; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 2px max(16px, env(safe-area-inset-right)) calc(var(--sheet-hidden) + 28px) max(16px, env(safe-area-inset-left)); }
+      .x-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+
+      .x-status { display: inline-flex; align-items: center; gap: 6px; font: var(--type-tag); color: var(--text-secondary); white-space: nowrap; }
+      .x-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--fill-system-green); }
+      .x-status.is-active { color: var(--fill-system-red); }
+      .x-status.is-active::before { background: var(--fill-system-red); animation: x-blink 1s infinite; }
+      .kt-mode { display: inline-flex; align-items: center; gap: 6px; font: var(--type-small); color: var(--text-secondary); overflow-wrap: anywhere; }
+      .kt-mode::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fill-system-orange); }
+      .kt-mode.is-live::before { background: var(--fill-system-green); }
+      .kt-handle { font: var(--type-label); color: var(--text-primary); }
+
+      /* segmented controls */
+      .x-segctl, .x-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 2px; border-radius: 11px; background: var(--fill-tertiary); }
+      .x-card .x-seg { background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+      .x-segctl button, .x-seg button { min-width: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; border: 0; border-radius: 9px; background: none; color: var(--text-primary); font: var(--weight-medium) var(--size-meta)/1.1 var(--sans); white-space: nowrap; cursor: pointer; }
+      .x-segctl button[aria-selected="true"], .x-seg button[aria-pressed="true"] { background: var(--fill-primary-on); font-weight: var(--weight-bold); box-shadow: 0 1px 3px var(--stroke-primary), 0 0 0 0.5px var(--stroke-primary); }
+      .x-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-pill); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) var(--size-caption)/1 var(--sans); }
+
+      /* content inside the sheet */
+      .x-card { background: var(--fill-tertiary); border-radius: var(--r-m); padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+      .x-card > * { min-width: 0; }
+      .x-card h2 { font: var(--weight-bold) var(--size-prose)/1.3 var(--sans); }
+      .x-card p { color: var(--text-secondary); }
+      .x-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .x-count { font: var(--type-small); color: var(--text-secondary); }
+      .x-form { display: grid; gap: 10px; min-width: 0; }
+      .x-mono { font-family: "Geist Mono", ui-monospace, monospace; font-size: var(--size-small); overflow-wrap: anywhere; }
+      .x-banner { border-radius: var(--r-m); padding: 12px 14px; font: var(--type-body-strong); color: var(--text-primary); border: 1px solid var(--fill-system-red); background: color-mix(in srgb, var(--fill-system-red) 14%, var(--fill-primary-on)); }
+      .x-banner--soft { border-color: var(--stroke-primary); background: var(--fill-tertiary); font: var(--type-small); color: var(--text-secondary); }
+      .x-banner--warn { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; border-color: var(--fill-system-orange); background: color-mix(in srgb, var(--fill-system-orange) 12%, var(--fill-primary-on)); }
+      .x-btn { min-height: 48px; border-radius: 12px; border: 1px solid var(--stroke-primary); background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-body-strong); padding: 0 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+      .x-btn:active { transform: scale(0.97); }
+      .x-btn:disabled { opacity: 0.5; }
+      .x-btn--primary { background: var(--fill-primary); color: var(--text-primary-on); border-color: transparent; }
+      .x-btn--red { background: var(--fill-system-red); color: var(--hero-text); border-color: transparent; }
+      .x-btn--small { min-height: 44px; font-size: var(--size-small); padding: 0 14px; }
+      .x-btn--wide { width: 100%; }
+      .x-btn.is-nudge { outline: 3px solid var(--fill-system-green); outline-offset: 2px; }
+      .x-link { min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--text-primary); font: var(--type-label); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+      .x-row { display: flex; gap: 10px; flex-wrap: wrap; }
+      .x-row > .x-btn { flex: 1 1 0; }
+      .x-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+      .x-list li { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--stroke-primary); min-width: 0; }
+      .x-list li:first-child { border-top: 0; padding-top: 0; }
+      .x-list .x-who { flex: 1; min-width: 0; display: grid; overflow-wrap: anywhere; }
+      .x-list .x-who b { font-weight: var(--weight-medium); }
+      .x-list .x-who span { color: var(--text-secondary); font-size: var(--size-small); }
+      .x-field { display: grid; gap: 6px; font: var(--type-label); color: var(--text-secondary); min-width: 0; }
+      .x-field input, .x-field textarea, .x-field select { min-height: 48px; width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--stroke-primary); background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-body); font-size: var(--size-prose); padding: 10px 14px; }
+      .x-field textarea { min-height: 96px; resize: vertical; }
+      .x-msg { font: var(--type-small); color: var(--text-secondary); min-height: 1.3em; }
+      .x-msg.is-err { color: var(--fill-system-red); }
+      .x-foot { text-align: center; padding: 4px 4px 0; justify-self: center; }
+
+      /* SOS details in the sheet */
+      .x-em { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+      .x-em__head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-m); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) var(--size-prose)/1.2 var(--sans); }
+      .x-em__head::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--hero-text); animation: x-blink 1s infinite; }
+      .x-stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 0; }
+      .x-stats div { background: var(--fill-tertiary); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+      .x-stats dt { font: var(--type-tag); color: var(--text-secondary); }
+      .x-stats dd { margin: 0; font: var(--type-body-strong); overflow-wrap: anywhere; }
+      .x-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+      .x-actions .x-btn { min-height: 64px; flex-direction: column; gap: 2px; padding: 6px 10px; text-align: center; }
+      .x-actions .x-btn small { color: inherit; opacity: 0.85; font-weight: var(--weight-regular); overflow-wrap: anywhere; }
+      .x-log { max-height: 240px; overflow-y: auto; }
+      .x-log li { font-family: "Geist Mono", ui-monospace, monospace; font-size: var(--size-caption); justify-content: space-between; flex-wrap: wrap; }
+
+      /* full-screen blurred SOS countdown */
+      .x-cd { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: calc(env(safe-area-inset-top) + 24px) max(24px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(24px, env(safe-area-inset-left)); text-align: center; color: var(--hero-text); background: color-mix(in srgb, var(--fill-system-red) 78%, transparent); -webkit-backdrop-filter: blur(30px) saturate(1.4); backdrop-filter: blur(30px) saturate(1.4); }
+      .x-cd__label { font: var(--weight-bold) var(--size-heading)/1.2 var(--sans); }
+      .x-cd__ring { width: 196px; height: 196px; border-radius: 50%; display: grid; place-items: center; border: 6px solid color-mix(in srgb, var(--hero-text) 40%, transparent); font: var(--weight-bold) 104px/1 var(--sans); font-variant-numeric: tabular-nums; }
+      .x-cd__sub { max-width: 30ch; font: var(--type-body); }
+      .x-cd__actions { display: grid; gap: 12px; width: min(100%, 320px); }
+      .x-cd__actions button { min-height: 56px; border: 0; border-radius: var(--r-pill); font: var(--weight-bold) 18px/1 var(--sans); cursor: pointer; }
+      .x-cd__cancel { background: var(--hero-text); color: var(--hero-surface); }
+      .x-cd__now { background: color-mix(in srgb, var(--hero-text) 22%, transparent); color: var(--hero-text); }
+
+      /* iOS passcode keypad */
+      .x-pin { position: fixed; inset: 0; z-index: 110; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 20px); text-align: center; color: var(--text-primary); background: var(--mat-agent); -webkit-backdrop-filter: blur(40px) saturate(1.6); backdrop-filter: blur(40px) saturate(1.6); }
+      .x-pin > svg { width: 26px; height: 26px; }
+      .x-pin h2 { font: var(--weight-medium) var(--size-heading)/1.2 var(--sans); }
+      .x-pin__sub { color: var(--text-secondary); font: var(--type-small); }
+      .x-dots { display: flex; justify-content: center; gap: 22px; margin-top: 8px; }
+      .x-dots span { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text-primary); transition: background var(--dur-quick); }
+      .x-dots span.is-on { background: var(--text-primary); }
+      .x-dots.is-shake { animation: x-shake 0.4s; }
+      @keyframes x-shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+      .x-pin__err { color: var(--fill-system-red); font: var(--type-label); min-height: 1.5em; }
+      .x-keys { display: grid; grid-template-columns: repeat(3, 76px); gap: 16px 24px; }
+      .x-keys button { width: 76px; height: 76px; border-radius: 50%; border: 0; padding: 0; background: var(--fill-tertiary); color: var(--text-primary); display: grid; place-content: center; gap: 1px; font: var(--weight-regular) 32px/1 var(--sans); cursor: pointer; }
+      .x-keys button small { font: var(--weight-bold) var(--size-caption)/1 var(--sans); letter-spacing: 0.14em; min-height: 12px; }
+      .x-keys button:active { background: var(--fill-secondary); }
+      .x-keys button.x-key-fn { background: none; font: var(--type-body-strong); font-size: var(--size-prose); }
+      @media (max-height: 600px) { .x-keys { gap: 10px 22px; } .x-keys button { width: 64px; height: 64px; } .x-keys { grid-template-columns: repeat(3, 64px); } .x-pin > svg, .x-pin__sub { display: none; } }
+
+      /* iOS-style toast banner */
+      .x-toast { position: fixed; z-index: 200; top: calc(env(safe-area-inset-top) + 8px); left: 50%; width: min(calc(100% - 16px), 420px); transform: translateX(-50%); display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 2px 10px; align-items: center; padding: 12px 14px; border-radius: 22px; color: var(--text-primary); cursor: pointer; animation: x-drop 0.42s var(--ease-out); }
+      .x-toast__icon { grid-row: span 2; width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; background: var(--fill-system-red); color: var(--hero-text); }
+      .x-toast__icon svg { width: 22px; height: 22px; }
+      .x-toast__title { display: flex; justify-content: space-between; gap: 8px; font: var(--type-label); }
+      .x-toast__title small { color: var(--text-secondary); font-weight: var(--weight-regular); }
+      .x-toast__msg { font: var(--type-small); color: var(--text-primary) !important; overflow-wrap: anywhere; }
+      .x-toast.is-out { animation: x-lift 0.3s var(--ease-out) forwards; }
+      @keyframes x-drop { from { transform: translate(-50%, -140%); opacity: 0; } }
+      @keyframes x-lift { to { transform: translate(-50%, -140%); opacity: 0; } }
+
+      /* circle rows */
+      .kt-member { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .kt-member__top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      .kt-member__act { display: flex; gap: 8px; flex-wrap: wrap; }
+      .kt-member__act .x-btn { flex: 1 1 auto; }
+      .kt-member.is-sos { margin: 4px -10px; padding: 10px !important; border-top: 0; border-radius: 12px; background: color-mix(in srgb, var(--fill-system-red) 16%, var(--fill-primary-on)); box-shadow: inset 0 0 0 1.5px var(--fill-system-red); }
+      .kt-member.is-sos + li { border-top: 0; }
+      .kt-member.is-flash { animation: x-blink 0.5s 2; }
+      .kt-avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--fill-primary); color: var(--text-primary-on); display: grid; place-items: center; font: var(--weight-bold) var(--size-prose)/1 var(--sans); }
+      .kt-member.is-sos .kt-avatar { background: var(--fill-system-red); color: var(--hero-text); }
+      .kt-pill { display: inline-flex; align-items: center; gap: 5px; font: var(--type-tag); padding: 3px 9px; border-radius: var(--r-pill); background: var(--fill-primary-on); color: var(--text-primary); white-space: nowrap; }
+      .kt-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--fill-system-green); }
+      .kt-pill--sos { background: var(--fill-system-red); color: var(--hero-text); font-weight: var(--weight-bold); }
+      .kt-pill--sos::before { background: var(--hero-text); animation: x-blink 1s infinite; }
+      .kt-pill--alert::before { background: var(--fill-system-red); }
+      .kt-pill--pending::before { background: var(--text-tertiary); }
+      .kt-empty { color: var(--text-secondary); }
+      .kt-qr { background: #fff; padding: 12px; border-radius: 12px; justify-self: center; min-height: 200px; min-width: 200px; display: grid; place-items: center; color: #1d1d1f; }
+      .kt-qr p { color: #1d1d1f !important; text-align: center; max-width: 200px; }
+      .kt-link { color: var(--text-secondary); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .x-medot, .x-medot.is-sos, .x-av.is-sos b::before, .x-av.is-sos b::after, .x-sospill i, .x-soscap.is-active svg, .x-status.is-active::before, .x-em__head::before, .kt-pill--sos::before, .x-toast, .x-toast.is-out, .x-dots.is-shake, .kt-member.is-flash { animation: none; }
+        .x-sheet, .x-soscap, .leaflet-bottom.leaflet-right { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="top">
+      <main class="main">
+        <!-- full-screen map -->
+        <div class="x-map" id="map" role="region" aria-label="Map of you and your circle">Loading map…</div>
+
+        <!-- top: SOS active pill -->
+        <button class="x-sospill" id="sosPill" type="button" hidden aria-label="SOS active. Show tracking details"><i aria-hidden="true"></i>SOS active <span id="sosPillTime">0:00</span></button>
+
+        <!-- floating map buttons -->
+        <div class="x-fabs">
+          <div class="x-fabgroup x-glass">
+            <button class="x-fab" type="button" id="fabRecenter" aria-label="Recenter on me">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.6 3.4 3.6 10.6c-.8.4-.7 1.5.1 1.7l6.6 1.4 1.4 6.6c.2.8 1.3.9 1.7.1l7.2-17c.3-.6-.3-1.3-1-1z"/></svg>
+            </button>
+            <button class="x-fab" type="button" id="fabLayers" aria-label="Map style: Street. Switch to Satellite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+            </button>
+          </div>
+          <button class="x-fab x-fab--round x-glass" type="button" id="buzzAll" aria-label="Buzz my circle">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.4 10.6 20C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- SOS capsule above the sheet -->
+        <button class="x-soscap" id="sos" type="button" aria-label="SOS: send emergency alert">
+          <svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="currentColor" opacity=".25"/><circle cx="17" cy="17" r="10" fill="currentColor"/><path d="M17 11.5v7M17 22v.5" stroke="var(--fill-system-red)" stroke-width="2.6" stroke-linecap="round"/></svg>
+          <span id="sosLabel">SOS</span>
+        </button>
+
+        <!-- draggable bottom sheet -->
+        <section class="x-sheet x-glass" id="sheet" aria-label="Kwata Tracker">
+          <button class="x-sheet__grab" type="button" id="sheetGrab" aria-label="Resize panel"><span></span></button>
+          <header class="x-sheet__head" id="sheetHead">
+            <div class="x-sheet__title">
+              <h1>Kwata Tracker</h1>
+              <p class="x-status" id="status" role="status">Ready</p>
+            </div>
+            <p class="x-sheet__meta"><span class="kt-handle" id="meHandle"></span><span class="kt-mode">Demo mode — live sync connects to a backend</span></p>
+            <div class="x-segctl" role="tablist" aria-label="Sections">
+              <button type="button" role="tab" id="tab-people" data-go="people" aria-controls="panel-people" aria-selected="true">People</button>
+              <button type="button" role="tab" id="tab-me" data-go="me" aria-controls="panel-me" aria-selected="false">Me</button>
+              <button type="button" role="tab" id="tabInvites" data-go="invites" aria-controls="panel-invites" aria-selected="false">Invites<span class="x-badge" id="inviteBadge" hidden></span></button>
+              <button type="button" role="tab" id="tab-settings" data-go="settings" aria-controls="panel-settings" aria-selected="false">Settings</button>
+            </div>
+          </header>
+
+          <div class="x-sheet__body" id="sheetBody">
+            <p class="x-banner" id="geoBanner" role="alert" hidden>Location blocked — allow location for this site in your browser settings.</p>
+            <p class="x-banner x-banner--warn" id="pinNote" hidden><span>Your PIN is still 0000.</span> <button class="x-btn x-btn--small" type="button" data-go="settings">Change PIN</button></p>
+            <p class="x-banner x-banner--soft" id="storeNote" hidden>Settings won't be saved in preview — open the published link to save.</p>
+
+            <!-- PEOPLE -->
+            <div class="x-panel" id="panel-people" role="tabpanel" aria-labelledby="tab-people">
+              <div class="x-card" id="profileCard" hidden>
+                <h2>Pick your username</h2>
+                <p>Your circle finds you by it, e.g. @kwata.</p>
+                <form id="profileForm" class="x-form" novalidate>
+                  <label class="x-field">Username<input id="pUser" autocapitalize="none" autocomplete="username" placeholder="kwata" maxlength="21" /></label>
+                  <label class="x-field">Name<input id="pName" autocomplete="name" placeholder="Your name" /></label>
+                  <label class="x-field">Phone, with country code<input id="pPhone" type="tel" inputmode="tel" value="+267" /></label>
+                  <p class="x-msg" id="pMsg"></p>
+                  <button class="x-btn x-btn--primary" type="submit">Save profile</button>
+                </form>
+              </div>
+              <div class="x-card">
+                <div class="x-card__head"><h2>Circle <span class="x-count" id="circleCount"></span></h2><button class="x-link" type="button" id="fitAll">Show everyone</button></div>
+                <ul class="x-list" id="circleList"></ul>
+              </div>
+              <div class="x-card">
+                <h2>Add to circle</h2>
+                <div class="x-seg" id="addSeg">
+                  <button type="button" data-mode="username" aria-pressed="true">Username</button>
+                  <button type="button" data-mode="phone" aria-pressed="false">Phone</button>
+                  <button type="button" data-mode="invite" aria-pressed="false">Invite / QR</button>
+                </div>
+                <form id="addForm" class="x-form" novalidate>
+                  <label class="x-field" id="addUserWrap">Their username<input id="addUser" autocapitalize="none" placeholder="@mpho" /></label>
+                  <label class="x-field" id="addPhoneWrap" hidden>Their phone, with country code<input id="addPhone" type="tel" inputmode="tel" value="+267" /></label>
+                  <div id="addInviteWrap" class="x-form" hidden>
+                    <p>Ask them to scan this or open the link. It sends you a request to join their circle, and you accept it under Invites.</p>
+                    <div class="kt-qr" id="qrBox"></div>
+                    <p class="x-mono kt-link" id="inviteLink"></p>
+                    <div class="x-row"><button class="x-btn x-btn--small" type="button" id="inviteShare">Share invite</button><button class="x-btn x-btn--small" type="button" id="inviteCopy">Copy link</button></div>
+                  </div>
+                  <p class="x-msg" id="addMsg"></p>
+                  <button class="x-btn x-btn--primary" type="submit">Send invite</button>
+                  <p class="fineprint">They'll join your circle only after they accept.</p>
+                </form>
+              </div>
+            </div>
+
+            <!-- ME -->
+            <div class="x-panel" id="panel-me" role="tabpanel" aria-labelledby="tab-me" hidden>
+              <div class="x-em" id="emergency" hidden>
+                <p class="x-em__head">Tracking active — your location is being logged</p>
+                <p class="x-banner x-banner--warn" id="emNoContacts" hidden>No trusted contacts yet. Use Share or Call emergency.</p>
+                <dl class="x-stats">
+                  <div><dt>Last update</dt><dd id="emTime">—</dd></div>
+                  <div><dt>Accuracy</dt><dd id="emAcc">—</dd></div>
+                  <div><dt>Coordinates</dt><dd class="x-mono" id="emCoords">—</dd></div>
+                  <div><dt>Battery</dt><dd id="emBatt">—</dd></div>
+                </dl>
+                <div class="x-actions">
+                  <button class="x-btn x-btn--primary" type="button" id="waBtn">Send to WhatsApp<small id="waNext"></small></button>
+                  <button class="x-btn x-btn--primary" type="button" id="smsBtn">Send SMS<small>all contacts</small></button>
+                  <button class="x-btn" type="button" id="shareBtn">Share<small>or copy</small></button>
+                  <a class="x-btn x-btn--red" href="tel:999" id="callBtn">Call emergency<small>999 Police</small></a>
+                </div>
+                <div class="x-card">
+                  <h2>Location log <span class="x-count" id="logInt"></span></h2>
+                  <ul class="x-list x-log" id="log"><li>No points yet</li></ul>
+                </div>
+                <div class="x-card">
+                  <h2>Circle alerted</h2>
+                  <ul class="x-list" id="emCircle"></ul>
+                </div>
+                <button class="x-btn x-btn--wide" type="button" id="stopBtn">Stop tracking</button>
+              </div>
+              <div class="x-card">
+                <div class="x-card__head"><h2>My location</h2><button class="x-link" type="button" id="locateBtn">Update</button></div>
+                <p class="x-mono" id="homeCoords">Waiting for location</p>
+              </div>
+              <div class="x-card">
+                <div class="x-card__head"><h2>Trusted contacts</h2><button class="x-link" type="button" data-go="settings">Edit</button></div>
+                <ul class="x-list" id="homeContacts"></ul>
+              </div>
+            </div>
+
+            <!-- INVITES -->
+            <div class="x-panel" id="panel-invites" role="tabpanel" aria-labelledby="tabInvites" hidden>
+              <div class="x-card" id="inviteCard">
+                <h2>Invites <span class="x-count" id="inviteCount"></span></h2>
+                <p>No one joins a circle without saying yes. Accepting shares your locations with each other.</p>
+                <ul class="x-list" id="inviteList"></ul>
+                <button class="x-btn x-btn--small" type="button" data-go="people">Invite someone</button>
+              </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="x-panel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+          <div class="x-card">
+            <h2>Appearance</h2>
+            <div class="x-seg" id="themeSeg">
+              <button type="button" data-theme-pick="system" aria-pressed="true">Auto</button>
+              <button type="button" data-theme-pick="light" aria-pressed="false">Light</button>
+              <button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button>
+            </div>
+          </div>
+          <div class="x-card">
+            <h2>Trusted contacts</h2>
+            <ul class="x-list" id="setContacts"></ul>
+            <form id="contactForm" class="x-form" novalidate>
+              <label class="x-field">Name<input id="cName" autocomplete="name" placeholder="e.g. Mpho" /></label>
+              <label class="x-field">Phone, with country code<input id="cPhone" type="tel" inputmode="tel" autocomplete="tel" value="+267" /></label>
+              <p class="x-msg" id="contactMsg"></p>
+              <div class="x-row">
+                <button class="x-btn x-btn--primary" type="submit" id="cSave">Add contact</button>
+                <button class="x-btn" type="button" id="cCancel" hidden>Cancel edit</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="x-card">
+            <h2>PIN to stop tracking</h2>
+            <p id="pinHint">Default PIN is 0000. Change it now.</p>
+            <form id="pinForm" class="x-form" novalidate>
+              <label class="x-field">Current PIN<input id="pinOld" type="password" inputmode="numeric" maxlength="4" autocomplete="off" /></label>
+              <label class="x-field">New 4-digit PIN<input id="pinNew" type="password" inputmode="numeric" maxlength="4" autocomplete="off" /></label>
+              <label class="x-field">Repeat new PIN<input id="pinRep" type="password" inputmode="numeric" maxlength="4" autocomplete="off" /></label>
+              <p class="x-msg" id="pinMsg"></p>
+              <button class="x-btn x-btn--primary" type="submit">Save PIN</button>
+            </form>
+          </div>
+
+          <div class="x-card">
+            <h2>Update interval</h2>
+            <p>How often a location point is logged during tracking.</p>
+            <div class="x-seg" id="intervalSeg">
+              <button type="button" data-int="15">15 s</button>
+              <button type="button" data-int="30">30 s</button>
+              <button type="button" data-int="60">60 s</button>
+            </div>
+          </div>
+
+          <div class="x-card">
+            <h2>Alert message</h2>
+            <label class="x-field">Optional custom text<textarea id="customMsg" placeholder="EMERGENCY: I need help."></textarea></label>
+            <p>Your location link and update time are always added.</p>
+            <p class="x-mono" id="msgPreview"></p>
+          </div>
+
+          <div class="x-card">
+            <h2>Profile</h2>
+            <form id="sProfileForm" class="x-form" novalidate>
+              <label class="x-field">Username<input id="sUser" autocapitalize="none" placeholder="kwata" maxlength="21" /></label>
+              <label class="x-field">Name<input id="sName" autocomplete="name" /></label>
+              <label class="x-field">Phone, with country code<input id="sPhone" type="tel" inputmode="tel" value="+267" /></label>
+              <p class="x-msg" id="sMsg"></p>
+              <button class="x-btn x-btn--primary" type="submit">Save profile</button>
+            </form>
+          </div>
+          <div class="x-card">
+            <h2>Maps</h2>
+            <div class="x-seg" id="mapStyleSeg" aria-label="Map style">
+              <button type="button" data-layer="Street" aria-pressed="true">Street</button>
+              <button type="button" data-layer="Satellite" aria-pressed="false">Satellite</button>
+            </div>
+            <label class="x-field">Map provider<select id="mapProv"><option value="leaflet">Street / Satellite (OpenStreetMap + Esri)</option><option value="google">Google Maps (needs API key)</option></select></label>
+            <label class="x-field">Google Maps API key (for later)<input id="gKey" autocomplete="off" placeholder="Not set" /></label>
+            <p class="x-msg" id="mapMsg"></p>
+          </div>
+          <div class="x-card">
+            <h2>Sync</h2>
+            <p><span class="kt-mode">Demo mode — live sync connects to a backend</span></p>
+            <button class="x-btn x-btn--small" type="button" id="simSOS" hidden>Simulate a member SOS (demo)</button>
+          </div>
+          <div class="x-card">
+            <h2>Help</h2>
+            <p>For real theft protection, also turn on Samsung Find My Mobile and Offline finding: Settings &gt; Security and privacy &gt; Lost device protection.</p>
+            <p>Install this app to your home screen from Chrome's menu (Add to Home screen).</p>
+          </div>
+          <p class="fineprint x-foot" id="madeBy">Kwata Tracker · Built by Kwata, an African defence company founded by Thuto Leseane.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- full-screen blurred countdown -->
+    <div class="x-cd" id="countdown" role="alertdialog" aria-modal="true" aria-labelledby="cdLabel" hidden>
+      <p class="x-cd__label" id="cdLabel">Sending SOS in <span id="cdNum2">5</span>…</p>
+      <p class="x-cd__ring" aria-hidden="true"><span id="cdNum">5</span></p>
+      <p class="x-cd__sub">Your circle and trusted contacts get your live location.</p>
+      <div class="x-cd__actions">
+        <button class="x-cd__cancel" type="button" id="cdCancel">Cancel</button>
+        <button class="x-cd__now" type="button" id="cdNow">Send now</button>
+      </div>
+    </div>
+
+    <!-- iOS passcode keypad -->
+    <div class="x-pin" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle" hidden>
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>
+      <h2 id="pinTitle">Enter Passcode</h2>
+      <p class="x-pin__sub">Your 4-digit PIN stops tracking</p>
+      <div class="x-dots" id="pinDots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p class="x-pin__err" id="pinErr" role="alert"></p>
+      <div class="x-keys" id="keys">
+        <button type="button" data-d="1" aria-label="1">1<small></small></button>
+        <button type="button" data-d="2" aria-label="2">2<small>ABC</small></button>
+        <button type="button" data-d="3" aria-label="3">3<small>DEF</small></button>
+        <button type="button" data-d="4" aria-label="4">4<small>GHI</small></button>
+        <button type="button" data-d="5" aria-label="5">5<small>JKL</small></button>
+        <button type="button" data-d="6" aria-label="6">6<small>MNO</small></button>
+        <button type="button" data-d="7" aria-label="7">7<small>PQRS</small></button>
+        <button type="button" data-d="8" aria-label="8">8<small>TUV</small></button>
+        <button type="button" data-d="9" aria-label="9">9<small>WXYZ</small></button>
+        <button type="button" class="x-key-fn" data-k="cancel">Cancel</button>
+        <button type="button" data-d="0" aria-label="0">0</button>
+        <button type="button" class="x-key-fn" data-k="del">Delete</button>
+      </div>
+    </div>
+
+    <!-- iOS-style top banner -->
+    <div class="x-toast x-glass" id="toast" role="status" aria-live="polite" hidden>
+      <span class="x-toast__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg></span>
+      <p class="x-toast__title"><b>Kwata Tracker</b><small>now</small></p>
+      <p class="x-toast__msg" id="toastMsg"></p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="hark.js"></script>
+    <!--
+    ================= SUPABASE SETUP SQL =================
+    Run once in Supabase > SQL Editor. Also enable Authentication > Sign In / Providers > "Allow anonymous sign-ins".
+
+    create table if not exists public.profiles (
+      id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+      username text unique,
+      name text,
+      phone text
+    );
+
+    create table if not exists public.circle_members (
+      owner_id uuid not null references public.profiles (id) on delete cascade,
+      member_id uuid not null references public.profiles (id) on delete cascade,
+      primary key (owner_id, member_id)
+    );
+
+    -- Consent: adding someone creates an invite; circle_members rows are only created by accept_invite().
+    create table if not exists public.circle_invites (
+      id bigserial primary key,
+      from_id uuid not null references public.profiles (id) on delete cascade,
+      to_id uuid not null references public.profiles (id) on delete cascade,
+      status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+      created_at timestamptz default now(),
+      check (from_id <> to_id)
+    );
+    create unique index if not exists circle_invites_one_pending
+      on public.circle_invites (from_id, to_id) where status = 'pending';
+
+    create table if not exists public.locations (
+      user_id uuid primary key references public.profiles (id) on delete cascade,
+      lat double precision,
+      lng double precision,
+      accuracy double precision,
+      battery double precision,
+      status text default 'safe',
+      updated_at timestamptz default now()
+    );
+
+    create table if not exists public.buzzes (
+      id bigserial primary key,
+      from_id uuid not null references public.profiles (id) on delete cascade,
+      to_id uuid not null references public.profiles (id) on delete cascade,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.sos_events (
+      id bigserial primary key,
+      user_id uuid not null references public.profiles (id) on delete cascade,
+      lat double precision,
+      lng double precision,
+      active boolean default true,
+      created_at timestamptz default now()
+    );
+
+    alter table public.profiles enable row level security;
+    alter table public.circle_members enable row level security;
+    alter table public.circle_invites enable row level security;
+    alter table public.locations enable row level security;
+    alter table public.buzzes enable row level security;
+    alter table public.sos_events enable row level security;
+
+    create or replace function public.in_my_circle(other uuid) returns boolean
+    language sql stable security definer set search_path = public as $$
+      select exists (select 1 from public.circle_members c
+                     where c.owner_id = other and c.member_id = auth.uid());
+    $$;
+
+    create policy "profiles readable by signed-in users" on public.profiles
+      for select to authenticated using (true);
+    create policy "insert own profile" on public.profiles
+      for insert to authenticated with check (id = auth.uid());
+    create policy "update own profile" on public.profiles
+      for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+    create policy "read own circle rows" on public.circle_members
+      for select to authenticated using (owner_id = auth.uid() or member_id = auth.uid());
+    -- No client insert on circle_members: rows are created only by accept_invite() below.
+    drop policy if exists "add circle pair" on public.circle_members;
+    revoke insert on public.circle_members from anon, authenticated;
+    create policy "remove circle pair" on public.circle_members
+      for delete to authenticated using (owner_id = auth.uid() or member_id = auth.uid());
+
+    create policy "read own invites" on public.circle_invites
+      for select to authenticated using (from_id = auth.uid() or to_id = auth.uid());
+    create policy "send invite" on public.circle_invites
+      for insert to authenticated with check (from_id = auth.uid() and status = 'pending');
+    create policy "invitee answers invite" on public.circle_invites
+      for update to authenticated
+      using (to_id = auth.uid() and status = 'pending')
+      with check (to_id = auth.uid() and status in ('accepted', 'declined'));
+    create policy "either side deletes invite" on public.circle_invites
+      for delete to authenticated using (from_id = auth.uid() or to_id = auth.uid());
+    -- Only the status column can be changed from the client.
+    revoke update on public.circle_invites from anon, authenticated;
+    grant update (status) on public.circle_invites to authenticated;
+
+    -- Called by the invitee after setting the invite to 'accepted'. Creates both circle rows server-side.
+    create or replace function public.accept_invite(invite_id bigint) returns void
+    language plpgsql security definer set search_path = public as $$
+    declare inv public.circle_invites;
+    begin
+      select * into inv from public.circle_invites
+        where id = invite_id and to_id = auth.uid() and status in ('pending', 'accepted')
+        for update;
+      if not found then raise exception 'Invite not found'; end if;
+      update public.circle_invites set status = 'accepted' where id = inv.id;
+      insert into public.circle_members (owner_id, member_id)
+        values (inv.from_id, inv.to_id), (inv.to_id, inv.from_id)
+        on conflict do nothing;
+    end;
+    $$;
+    revoke execute on function public.accept_invite(bigint) from public, anon;
+    grant execute on function public.accept_invite(bigint) to authenticated;
+
+    create policy "read own or circle locations" on public.locations
+      for select to authenticated using (user_id = auth.uid() or public.in_my_circle(user_id));
+    create policy "write own location" on public.locations
+      for insert to authenticated with check (user_id = auth.uid());
+    create policy "update own location" on public.locations
+      for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+    create policy "read my buzzes" on public.buzzes
+      for select to authenticated using (to_id = auth.uid() or from_id = auth.uid());
+    create policy "send buzz to circle" on public.buzzes
+      for insert to authenticated with check (from_id = auth.uid() and public.in_my_circle(to_id));
+
+    create policy "read own or circle sos" on public.sos_events
+      for select to authenticated using (user_id = auth.uid() or public.in_my_circle(user_id));
+    create policy "write own sos" on public.sos_events
+      for insert to authenticated with check (user_id = auth.uid());
+    create policy "update own sos" on public.sos_events
+      for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+    alter publication supabase_realtime add table public.locations, public.buzzes, public.sos_events, public.circle_members;
+    alter publication supabase_realtime add table public.circle_invites;
+
+    Already ran the earlier setup? Run only the circle_invites table and index, its RLS line and policies,
+    the drop/revoke lines on circle_members, accept_invite(), and the circle_invites publication line.
+    ======================================================
+    -->
+    <script>
+/* ================= CONFIG =================
+   Fill both values to switch from DEMO mode to live Supabase sync.
+   Run the SQL in the commented block near the bottom of this file in the Supabase SQL editor first. */
+var SUPABASE_URL = "https://otemiymlkjuakqpgalwg.supabase.co";
+var SUPABASE_ANON_KEY = "sb_publishable_bjImYZEUvMV-mVHLRXf78A_Gl2_feaK";
+var SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+var COMPANY_NAME = "Kwata";
+
+/* ================= shared storage ================= */
+window.KStore = (function () {
+  var KEY = "kwata.community.v1", mem = {}, ok = false;
+  try { localStorage.setItem("kwata-c-test", "1"); localStorage.removeItem("kwata-c-test"); ok = true; } catch (e) { ok = false; }
+  function load() { if (!ok) return mem; try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return mem; } }
+  var data = load();
+  return {
+    get: function (k, d) { return data[k] === undefined ? d : data[k]; },
+    set: function (k, v) { data[k] = v; if (ok) { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} } }
+  };
+})();
+
+/* ================= MapProvider =================
+   Every map in the app is created through MapProvider.create(), so another provider (Google Maps)
+   can be plugged in later. Settings: KStore "mapProvider" ("leaflet" | "google") and "googleMapsKey". */
+window.MapProvider = (function () {
+  var TILES = {
+    street: { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, className: "x-tiles--street", attribution: "© OpenStreetMap contributors" } },
+    satellite: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 19, attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community" } }
+  };
+  var maps = [];
+  function hasL() { return typeof window.L !== "undefined"; }
+  function me() { try { return window.KT && window.KT.last && window.KT.last(); } catch (e) { return null; } }
+
+  var adapters = {
+    leaflet: {
+      create: function (el, lat, lng, zoom) {
+        if (!hasL()) { el.textContent = "Map unavailable offline. " + lat.toFixed(5) + ", " + lng.toFixed(5); return null; }
+        el.textContent = "";
+        /* No zoom or layer controls: pinch to zoom, and the floating glass buttons switch style and recenter. */
+        var m = L.map(el, { zoomControl: false, attributionControl: false }).setView([lat, lng], zoom);
+        L.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
+        var base = { "Street": L.tileLayer(TILES.street.url, TILES.street.opts), "Satellite": L.tileLayer(TILES.satellite.url, TILES.satellite.opts) };
+        var pick = window.KStore.get("mapLayer", "Street");
+        m._ktBase = base; m._ktCur = (base[pick] || base.Street).addTo(m);
+        m.ktRecenter = function () {
+          var p = me();
+          if (p) m.setView([p.lat, p.lng], Math.max(m.getZoom(), 16));
+          else if (window.KT) window.KT.toast("Location not known yet");
+        };
+        maps.push(m);
+        return m;
+      }
+    },
+    /* Placeholder for a future Google Maps adapter. It needs a Google Maps JavaScript API key
+       (KStore "googleMapsKey"). Until it is implemented, the app keeps using Leaflet. */
+    google: null
+  };
+
+  return {
+    name: function () { return window.KStore.get("mapProvider", "leaflet"); },
+    create: function (el, lat, lng, zoom) {
+      var a = adapters[this.name()];
+      if (!a) a = adapters.leaflet;
+      return a.create(el, lat, lng, zoom);
+    },
+    register: function (name, adapter) { adapters[name] = adapter; },
+    layer: function () { return window.KStore.get("mapLayer", "Street") === "Satellite" ? "Satellite" : "Street"; },
+    setLayer: function (name) {
+      name = name === "Satellite" ? "Satellite" : "Street";
+      window.KStore.set("mapLayer", name);
+      maps.forEach(function (m) {
+        var nl = m._ktBase && m._ktBase[name];
+        if (!nl || nl === m._ktCur) return;
+        m.removeLayer(m._ktCur); nl.addTo(m); m._ktCur = nl;
+      });
+      return name;
+    },
+    refreshAll: function () { maps.forEach(function (m) { try { m.invalidateSize(); } catch (e) {} }); }
+  };
+})();
+
+/* ================= Backend =================
+   One object, two implementations: Supabase (live) when SUPABASE_URL + SUPABASE_ANON_KEY are set, else DEMO.
+   API: register(profile), sendInvite({username|phone}), acceptInvite(id), declineInvite(id), removeMember(id),
+        shareLocation(loc), sendBuzz(toId or "all"), sendSOS(active, loc), subscribe(fn) -> unsubscribe.
+   Events emitted to subscribers: {type:"me"}, {type:"members"}, {type:"invites"}, {type:"invite", from}, {type:"buzz", from},
+        {type:"sos", member, active}, {type:"alerted"}, {type:"status", text}, {type:"error", message} */
+window.Backend = (function () {
+  var subs = [];
+  var B = {
+    mode: (SUPABASE_URL && SUPABASE_ANON_KEY) ? "supabase" : "demo",
+    me: { id: "me", username: window.KStore.get("username", ""), name: window.KStore.get("name", ""), phone: window.KStore.get("phone", ""), status: "safe" },
+    members: [],
+    invites: [], /* pending only: { id, incoming, user: {id, username, name, phone}, created } */
+    alerted: false,
+    statusText: "",
+    subscribe: function (fn) { subs.push(fn); return function () { subs = subs.filter(function (f) { return f !== fn; }); }; },
+    emit: function (ev) { subs.slice().forEach(function (f) { try { f(ev); } catch (e) { console.error(e); } }); },
+    member: function (id) { return B.members.filter(function (m) { return m.id === id; })[0]; },
+    invite: function (id) { return B.invites.filter(function (i) { return String(i.id) === String(id); })[0]; },
+    inviteLink: function () { return location.origin + location.pathname + "?invite=" + encodeURIComponent(B.me.username || ""); }
+  };
+  function cleanUser(u) { return String(u || "").trim().replace(/^@/, "").toLowerCase(); }
+  function cleanPhone(p) { p = String(p || "").replace(/[^\d+]/g, ""); if (p.indexOf("00") === 0) p = "+" + p.slice(2); if (p && p[0] !== "+") p = "+" + p; return p; }
+  B.cleanUser = cleanUser;
+  function setStatus(t) { B.statusText = t; B.emit({ type: "status", text: t }); }
+
+  /* ---------- DEMO ---------- */
+  var Demo = {
+    timers: [],
+    init: function () {
+      var C = { lat: -24.6282, lng: 25.9231 };
+      var saved = window.KStore.get("demoMembers", null);
+      B.members = Array.isArray(saved) && saved.length ? saved : [
+        { id: "d-mpho", username: "mpho", name: "Mpho Kgosi", phone: "+26771000001", lat: C.lat + 0.006, lng: C.lng + 0.004 },
+        { id: "d-naledi", username: "naledi", name: "Naledi Molefe", phone: "+26772000002", lat: C.lat - 0.004, lng: C.lng + 0.009 },
+        { id: "d-thabo", username: "thabo", name: "Thabo Sebina", phone: "+26773000003", lat: C.lat + 0.011, lng: C.lng - 0.007 }
+      ];
+      B.members.forEach(function (m) { m.status = "safe"; m.lastSeen = Date.now() - Math.round(Math.random() * 90000); m.alerted = false; });
+      setStatus("Demo mode — live sync connects to a backend");
+      var out = window.KStore.get("demoOutgoing", []);
+      B.invites = Array.isArray(out) ? out : [];
+      B.emit({ type: "members" }); B.emit({ type: "invites" });
+      /* one simulated incoming invite, to show the consent flow */
+      if (!window.KStore.get("demoInviteDone", false)) Demo.timers.push(setTimeout(function () {
+        var inv = { id: "di-lesedi", incoming: true, created: Date.now(), user: { id: "d-lesedi", username: "lesedi", name: "Lesedi Tau", phone: "+26774000004" } };
+        if (B.member(inv.user.id) || B.invite(inv.id)) return;
+        B.invites.unshift(inv); B.emit({ type: "invites" }); B.emit({ type: "invite", from: inv.user });
+      }, 4000));
+      Demo.timers.push(setInterval(function () {
+        B.members.forEach(function (m) {
+          m.lat += (Math.random() - 0.5) * 0.0006; m.lng += (Math.random() - 0.5) * 0.0006;
+          if (Math.random() < 0.7) m.lastSeen = Date.now();
+        });
+        B.emit({ type: "members" });
+      }, 5000));
+      (function loop() {
+        Demo.timers.push(setTimeout(function () {
+          var m = B.members[Math.floor(Math.random() * B.members.length)];
+          if (m) B.emit({ type: "buzz", from: m });
+          loop();
+        }, 60000 + Math.random() * 60000));
+      })();
+    },
+    persist: function () {
+      window.KStore.set("demoMembers", B.members.map(function (m) { return { id: m.id, username: m.username, name: m.name, phone: m.phone, lat: m.lat, lng: m.lng }; }));
+      window.KStore.set("demoOutgoing", B.invites.filter(function (i) { return !i.incoming; }));
+    }
+  };
+
+  /* ---------- SUPABASE ---------- */
+  var Sb = {
+    client: null, uid: null, channel: null,
+    loadLib: function () {
+      return new Promise(function (res, rej) {
+        if (window.supabase && window.supabase.createClient) return res();
+        var s = document.createElement("script"); s.src = SUPABASE_CDN; s.onload = res; s.onerror = function () { rej(new Error("Could not load Supabase")); };
+        document.head.appendChild(s);
+      });
+    },
+    init: async function () {
+      await Sb.loadLib();
+      Sb.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+      var sess = (await Sb.client.auth.getSession()).data.session;
+      if (!sess) {
+        var r = await Sb.client.auth.signInAnonymously();
+        if (r.error) throw r.error;
+        sess = r.data.session;
+      }
+      await Sb.afterAuth(sess.user.id);
+      Sb.client.auth.onAuthStateChange(function (ev, s) { if (s && s.user && Sb.uid && s.user.id !== Sb.uid) Sb.afterAuth(s.user.id).catch(function () {}); });
+    },
+    afterAuth: async function (uid) {
+      if (B.mode !== "supabase") return;
+      Sb.uid = uid; B.me.id = uid;
+      var p = await Sb.client.from("profiles").select("*").eq("id", uid).maybeSingle();
+      if (p.error) throw p.error;
+      if (p.data) { B.me.username = p.data.username || B.me.username; B.me.name = p.data.name || B.me.name; B.me.phone = p.data.phone || B.me.phone; }
+      else if (B.me.username) { await Sb.client.from("profiles").upsert({ id: uid, username: B.me.username, name: B.me.name, phone: B.me.phone }); }
+      B.emit({ type: "me" });
+      await Sb.loadCircle();
+      await Sb.loadInvites();
+      Sb.realtime();
+      setStatus("Live sync on");
+    },
+    loadCircle: async function () {
+      var cm = await Sb.client.from("circle_members").select("member_id").eq("owner_id", Sb.uid);
+      if (cm.error) throw cm.error;
+      var ids = (cm.data || []).map(function (r) { return r.member_id; });
+      if (!ids.length) { B.members = []; B.emit({ type: "members" }); return; }
+      var pr = await Sb.client.from("profiles").select("id,username,name,phone").in("id", ids);
+      var lo = await Sb.client.from("locations").select("*").in("user_id", ids);
+      var so = await Sb.client.from("sos_events").select("*").in("user_id", ids).eq("active", true);
+      var locs = {}; (lo.data || []).forEach(function (l) { locs[l.user_id] = l; });
+      var sos = {}; (so.data || []).forEach(function (s) { sos[s.user_id] = s; });
+      B.members = (pr.data || []).map(function (p) {
+        var l = locs[p.id];
+        return { id: p.id, username: p.username, name: p.name, phone: p.phone, lat: l ? l.lat : null, lng: l ? l.lng : null,
+          lastSeen: l ? Date.parse(l.updated_at) : null, status: sos[p.id] ? "sos" : (l && l.status) || "safe", alerted: B.alerted };
+      });
+      B.emit({ type: "members" });
+    },
+    loadInvites: async function () {
+      var r = await Sb.client.from("circle_invites").select("id,from_id,to_id,status,created_at")
+        .eq("status", "pending").or("from_id.eq." + Sb.uid + ",to_id.eq." + Sb.uid).order("created_at", { ascending: false });
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      var ids = rows.map(function (x) { return x.to_id === Sb.uid ? x.from_id : x.to_id; });
+      var profs = {};
+      if (ids.length) { var pr = await Sb.client.from("profiles").select("id,username,name,phone").in("id", ids); (pr.data || []).forEach(function (p) { profs[p.id] = p; }); }
+      B.invites = rows.map(function (x) {
+        var inc = x.to_id === Sb.uid, other = inc ? x.from_id : x.to_id;
+        return { id: x.id, incoming: inc, created: Date.parse(x.created_at), user: profs[other] || { id: other, username: "user" } };
+      });
+      B.emit({ type: "invites" });
+    },
+    realtime: function () {
+      if (Sb.channel) Sb.client.removeChannel(Sb.channel);
+      Sb.channel = Sb.client.channel("kwata-" + Sb.uid)
+        .on("postgres_changes", { event: "*", schema: "public", table: "locations" }, function (pl) {
+          var l = pl.new; var m = l && B.member(l.user_id); if (!m) return;
+          m.lat = l.lat; m.lng = l.lng; m.lastSeen = Date.parse(l.updated_at) || Date.now();
+          if (m.status !== "sos") m.status = l.status || "safe";
+          B.emit({ type: "members" });
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "circle_members" }, function () { Sb.loadCircle().catch(function () {}); })
+        /* incoming invites, live */
+        .on("postgres_changes", { event: "*", schema: "public", table: "circle_invites", filter: "to_id=eq." + Sb.uid }, async function (pl) {
+          try { await Sb.loadInvites(); } catch (e) {}
+          if (pl.eventType === "INSERT" && pl.new && pl.new.status === "pending") {
+            var inv = B.invite(pl.new.id);
+            B.emit({ type: "invite", from: inv ? inv.user : { username: "someone" } });
+          }
+        })
+        /* my outgoing invites: pending -> accepted / declined */
+        .on("postgres_changes", { event: "*", schema: "public", table: "circle_invites", filter: "from_id=eq." + Sb.uid }, function (pl) {
+          Sb.loadInvites().catch(function () {});
+          if (pl.new && pl.new.status === "accepted") Sb.loadCircle().catch(function () {});
+        })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "buzzes", filter: "to_id=eq." + Sb.uid }, async function (pl) {
+          var from = B.member(pl.new.from_id);
+          if (!from) { var r = await Sb.client.from("profiles").select("id,username,name").eq("id", pl.new.from_id).maybeSingle(); from = r.data || { username: "someone" }; }
+          B.emit({ type: "buzz", from: from });
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "sos_events" }, function (pl) {
+          var s = pl.new; var m = s && B.member(s.user_id); if (!m) return;
+          m.status = s.active ? "sos" : "safe"; if (s.lat != null) { m.lat = s.lat; m.lng = s.lng; m.lastSeen = Date.now(); }
+          B.emit({ type: "sos", member: m, active: s.active }); B.emit({ type: "members" });
+        })
+        .subscribe();
+    },
+    findProfile: async function (q) {
+      var col = q.username ? "username" : "phone", val = q.username ? cleanUser(q.username) : cleanPhone(q.phone);
+      var r = await Sb.client.from("profiles").select("id,username,name,phone").eq(col, val).maybeSingle();
+      if (r.error) throw r.error; return r.data;
+    }
+  };
+
+  /* ---------- public methods ---------- */
+  B.start = async function () {
+    if (B.mode === "supabase") {
+      setStatus("Connecting…");
+      try {
+        await Promise.race([Sb.init(), new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 15000); })]);
+        return;
+      }
+      catch (e) { console.error(e); B.mode = "demo"; B.emit({ type: "error", message: "Live sync failed (" + (e.message || e) + "). Running in demo mode." }); }
+    }
+    Demo.init();
+  };
+  B.signInEmail = async function (email) {
+    if (B.mode !== "supabase" || !Sb.client) throw new Error("Live sync is not configured");
+    var r = await Sb.client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (r.error) throw r.error;
+  };
+  B.register = async function (p) {
+    var u = cleanUser(p.username);
+    if (!/^[a-z0-9_]{3,20}$/.test(u)) throw new Error("Use 3–20 letters, numbers or _");
+    B.me.username = u; B.me.name = String(p.name || "").trim().slice(0, 40); B.me.phone = p.phone ? cleanPhone(p.phone) : B.me.phone;
+    if (B.mode === "supabase" && Sb.uid) {
+      var r = await Sb.client.from("profiles").upsert({ id: Sb.uid, username: u, name: B.me.name, phone: B.me.phone || null });
+      if (r.error) throw new Error(r.error.code === "23505" ? "That username is taken" : r.error.message);
+    }
+    window.KStore.set("username", u); window.KStore.set("name", B.me.name); window.KStore.set("phone", B.me.phone || "");
+    B.emit({ type: "me" });
+    return B.me;
+  };
+  function pendingWith(match) {
+    return B.invites.filter(function (i) { return match(i.user); })[0];
+  }
+  function pendingError(inv) {
+    return new Error(inv.incoming ? "@" + inv.user.username + " already invited you — accept it under Invites" : "Invite to @" + inv.user.username + " is already pending");
+  }
+  /* Consent: this only sends an invite. Nobody joins a circle until the invitee accepts. */
+  B.sendInvite = async function (q) {
+    if (B.mode === "supabase" && Sb.uid) {
+      if (!B.me.username) throw new Error("Pick your username first");
+      var p = await Sb.findProfile(q);
+      if (!p) throw new Error("No Kwata user found. Send them your invite link.");
+      if (p.id === Sb.uid) throw new Error("That's you");
+      if (B.member(p.id)) throw new Error("Already in your circle");
+      var pend = pendingWith(function (x) { return x.id === p.id; });
+      if (pend) throw pendingError(pend);
+      var r = await Sb.client.from("circle_invites").insert({ from_id: Sb.uid, to_id: p.id, status: "pending" });
+      if (r.error) throw new Error(r.error.code === "23505" ? "Invite already pending" : r.error.message);
+      await Sb.loadInvites();
+      return p;
+    }
+    var u = q.username ? cleanUser(q.username) : "", ph = q.phone ? cleanPhone(q.phone) : "";
+    if (u && !/^[a-z0-9_]{3,20}$/.test(u)) throw new Error("Usernames are 3–20 letters, numbers or _");
+    if (ph && ph.replace(/\D/g, "").length < 8) throw new Error("Enter a full number with country code");
+    if (!u && !ph) throw new Error("Enter a username or phone number");
+    if (u && u === B.me.username) throw new Error("That's you");
+    var same = function (m) { return (u && m.username === u) || (ph && m.phone === ph); };
+    if (B.members.filter(same)[0]) throw new Error("Already in your circle");
+    var dp = pendingWith(same);
+    if (dp) throw pendingError(dp);
+    var user = { id: "d-" + Date.now(), username: u || ("user" + ph.slice(-4)), name: q.name || (u ? u.charAt(0).toUpperCase() + u.slice(1) : ph), phone: ph };
+    B.invites.push({ id: "do-" + Date.now(), incoming: false, created: Date.now(), user: user });
+    Demo.persist(); B.emit({ type: "invites" });
+    return user;
+  };
+  B.addMember = B.sendInvite;
+  B.acceptInvite = async function (id) {
+    var inv = B.invite(id);
+    if (!inv || !inv.incoming) throw new Error("Invite not found");
+    if (B.mode === "supabase" && Sb.uid) {
+      var u = await Sb.client.from("circle_invites").update({ status: "accepted" }).eq("id", inv.id).eq("to_id", Sb.uid);
+      if (u.error) throw new Error(u.error.message);
+      /* circle_members rows are created server-side only */
+      var r = await Sb.client.rpc("accept_invite", { invite_id: inv.id });
+      if (r.error) throw new Error(r.error.message);
+      await Sb.loadInvites(); await Sb.loadCircle();
+      return inv.user;
+    }
+    B.invites = B.invites.filter(function (i) { return i !== inv; });
+    var m = Object.assign({}, inv.user, { lat: -24.6282 + (Math.random() - 0.5) * 0.03, lng: 25.9231 + (Math.random() - 0.5) * 0.03, lastSeen: Date.now(), status: "safe", alerted: B.alerted });
+    B.members.push(m); window.KStore.set("demoInviteDone", true); Demo.persist();
+    B.emit({ type: "invites" }); B.emit({ type: "members" });
+    return inv.user;
+  };
+  B.declineInvite = async function (id) {
+    var inv = B.invite(id);
+    if (!inv || !inv.incoming) throw new Error("Invite not found");
+    if (B.mode === "supabase" && Sb.uid) {
+      var r = await Sb.client.from("circle_invites").update({ status: "declined" }).eq("id", inv.id).eq("to_id", Sb.uid);
+      if (r.error) throw new Error(r.error.message);
+      await Sb.loadInvites();
+      return inv.user;
+    }
+    B.invites = B.invites.filter(function (i) { return i !== inv; });
+    window.KStore.set("demoInviteDone", true); Demo.persist(); B.emit({ type: "invites" });
+    return inv.user;
+  };
+  B.removeMember = async function (id) {
+    if (B.mode === "supabase" && Sb.uid) {
+      await Sb.client.from("circle_members").delete().eq("owner_id", Sb.uid).eq("member_id", id);
+      await Sb.client.from("circle_members").delete().eq("owner_id", id).eq("member_id", Sb.uid);
+      /* clear old invites so a removed person can't re-run accept_invite to rejoin */
+      await Sb.client.from("circle_invites").delete().or("and(from_id.eq." + Sb.uid + ",to_id.eq." + id + "),and(from_id.eq." + id + ",to_id.eq." + Sb.uid + ")");
+      await Sb.loadCircle(); await Sb.loadInvites(); return;
+    }
+    B.members = B.members.filter(function (m) { return m.id !== id; }); Demo.persist(); B.emit({ type: "members" });
+  };
+  B.shareLocation = async function (loc) {
+    B.me.lat = loc.lat; B.me.lng = loc.lng;
+    if (B.mode === "supabase" && Sb.uid) {
+      try { await Sb.client.from("locations").upsert({ user_id: Sb.uid, lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, battery: loc.battery, status: B.me.status, updated_at: new Date().toISOString() }); } catch (e) {}
+    }
+  };
+  B.sendBuzz = async function (to) {
+    var targets = to === "all" ? B.members : B.members.filter(function (m) { return m.id === to; });
+    if (!targets.length) throw new Error("Your circle is empty — add someone first");
+    if (B.mode === "supabase" && Sb.uid) {
+      var r = await Sb.client.from("buzzes").insert(targets.map(function (m) { return { from_id: Sb.uid, to_id: m.id }; }));
+      if (r.error) throw new Error(r.error.message);
+      return targets;
+    }
+    targets.forEach(function (m) {
+      if (Math.random() < 0.6) setTimeout(function () { if (B.member(m.id)) B.emit({ type: "buzz", from: m }); }, 3000 + Math.random() * 5000);
+    });
+    return targets;
+  };
+  B.sendSOS = async function (active, loc) {
+    B.me.status = active ? "sos" : "safe"; B.alerted = !!active;
+    B.members.forEach(function (m) { m.alerted = !!active; });
+    B.emit({ type: "alerted", active: !!active }); B.emit({ type: "members" });
+    if (B.mode === "supabase" && Sb.uid) {
+      try {
+        if (active) await Sb.client.from("sos_events").insert({ user_id: Sb.uid, lat: loc ? loc.lat : null, lng: loc ? loc.lng : null, active: true });
+        else await Sb.client.from("sos_events").update({ active: false }).eq("user_id", Sb.uid).eq("active", true);
+        if (loc) await B.shareLocation(loc);
+      } catch (e) { B.emit({ type: "error", message: "Could not reach the server — use WhatsApp/SMS too." }); }
+    }
+  };
+  /* demo-only helper to preview how a member SOS looks */
+  B.simulateMemberSOS = function () {
+    if (B.mode !== "demo" || !B.members.length) return;
+    var m = B.members[Math.floor(Math.random() * B.members.length)];
+    m.status = m.status === "sos" ? "safe" : "sos"; m.lastSeen = Date.now();
+    B.emit({ type: "sos", member: m, active: m.status === "sos" }); B.emit({ type: "members" });
+  };
+  return B;
+})();
+
+    </script>
+    <script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "kwata-tracker-v1";
+  var DEFAULT_MSG = "EMERGENCY: I need help.";
+
+  /* ---------- storage ---------- */
+  var canStore = false;
+  try { localStorage.setItem("kwata-test", "1"); localStorage.removeItem("kwata-test"); canStore = true; } catch (e) { canStore = false; }
+  var S = { contacts: [], pin: "0000", interval: 30, message: "" };
+  if (canStore) {
+    try { var saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && typeof saved === "object") {
+      if (Array.isArray(saved.contacts)) S.contacts = saved.contacts.filter(function (c) { return c && c.phone; });
+      if (/^\d{4}$/.test(saved.pin)) S.pin = saved.pin;
+      if ([15, 30, 60].indexOf(saved.interval) > -1) S.interval = saved.interval;
+      if (typeof saved.message === "string") S.message = saved.message;
+    } } catch (e) {}
+  }
+  function save() {
+    if (!canStore) return;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { canStore = false; $("storeNote").hidden = false; }
+  }
+  $("storeNote").hidden = canStore;
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function hhmm(d) { return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function hhmmss(d) { return hhmm(d) + ":" + String(d.getSeconds()).padStart(2, "0"); }
+  function cleanPhone(p) { p = String(p || "").replace(/[^\d+]/g, ""); if (p.indexOf("00") === 0) p = "+" + p.slice(2); if (p && p[0] !== "+") p = "+" + p; return p; }
+  var toastT;
+  /* iOS-style banner: drops in from the top, lifts away after a few seconds or on tap */
+  function hideToast() { var t = $("toast"); if (t.hidden) return; t.classList.add("is-out"); clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; t.classList.remove("is-out"); }, 300); }
+  function toast(msg) {
+    var t = $("toast"); clearTimeout(toastT);
+    $("toastMsg").textContent = msg; t.classList.remove("is-out");
+    t.hidden = true; void t.offsetWidth; t.hidden = false;
+    toastT = setTimeout(hideToast, 3600);
+  }
+  $("toast").addEventListener("click", hideToast);
+  function hasL() { return typeof window.L !== "undefined"; }
+
+  /* ---------- location state ---------- */
+  var last = null; // {lat,lng,acc,time}
+  function setPos(p) { last = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, time: new Date(p.timestamp || Date.now()) }; try { document.dispatchEvent(new CustomEvent("kt:pos")); } catch (e) {} }
+  function mapsUrl() { return last ? "https://www.google.com/maps?q=" + last.lat.toFixed(6) + "," + last.lng.toFixed(6) : ""; }
+  function message() {
+    var head = (S.message || "").trim() || DEFAULT_MSG;
+    if (!last) return head + " My location: not available yet (GPS searching).";
+    return head + " My location: " + mapsUrl() + " (updated " + hhmm(last.time) + ")";
+  }
+  function geoBlocked(on) { $("geoBanner").hidden = !on; }
+
+  /* ---------- maps ---------- */
+  function makeMap(el, lat, lng, zoom) {
+    if (!hasL()) { el.textContent = "Map unavailable offline. " + lat.toFixed(5) + ", " + lng.toFixed(5); return null; }
+    return window.MapProvider.create(el, lat, lng, zoom);
+  }
+  function cssVar(n, d) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d; }
+  var red = cssVar("--fill-system-red", "#da2f35"), blue = cssVar("--x-blue", "#0a84ff");
+  var GABORONE = [-24.6282, 25.9231];
+  /* One full-screen map carries everything: the blue self dot, the circle's avatars and the SOS track. */
+  var map = null, meMk = null, meAcc = null, track = null, follow = true;
+  function ensureMap() {
+    if (map) return map;
+    var c = last ? [last.lat, last.lng] : GABORONE;
+    map = makeMap($("map"), c[0], c[1], last ? 16 : 13);
+    if (!map) return null;
+    track = L.polyline([], { color: red, weight: 5, opacity: 0.85 }).addTo(map);
+    map.on("dragstart", function () { follow = false; });
+    return map;
+  }
+  function meIcon() { return L.divIcon({ className: "", html: "<div class='x-medot" + (active ? " is-sos" : "") + "'></div>", iconSize: [0, 0], iconAnchor: [0, 0] }); }
+  function showHome() {
+    if (!last) return;
+    $("homeCoords").textContent = last.lat.toFixed(5) + ", " + last.lng.toFixed(5) + " · ±" + Math.round(last.acc) + " m · " + hhmm(last.time);
+    if (!ensureMap()) return;
+    var ll = [last.lat, last.lng];
+    if (!meMk) {
+      meAcc = L.circle(ll, { radius: last.acc, color: blue, weight: 1, fillColor: blue, fillOpacity: 0.12, interactive: false }).addTo(map);
+      meMk = L.marker(ll, { icon: meIcon(), zIndexOffset: 2000, interactive: false, keyboard: false }).addTo(map);
+      map.setView(ll, Math.max(map.getZoom(), 15));
+    } else {
+      meMk.setLatLng(ll); meAcc.setLatLng(ll).setRadius(last.acc);
+      if (follow) map.panTo(ll);
+    }
+  }
+  function refreshMe() { if (meMk) meMk.setIcon(meIcon()); }
+  function recenter() { follow = true; if (map && map.ktRecenter) map.ktRecenter(); else toast("Location not known yet"); }
+  function locate() {
+    if (!navigator.geolocation) { geoBlocked(true); toast("Location unavailable on this device"); return; }
+    try {
+      navigator.geolocation.getCurrentPosition(function (p) { geoBlocked(false); setPos(p); showHome(); },
+        function (err) {
+          if (err && err.code === 1) geoBlocked(true);
+          else if (!last) toast("Could not get your location yet — tap Update");
+        }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+    } catch (e) { geoBlocked(true); }
+  }
+  $("locateBtn").addEventListener("click", function () { follow = true; locate(); });
+  $("fabRecenter").addEventListener("click", function () { if (!last) locate(); recenter(); });
+
+  /* ---------- bottom sheet: peek / half / full ---------- */
+  var sheet = $("sheet"), root = document.documentElement, detent = "half", curVis = 0, drag = null;
+  function detents() {
+    var H = sheet.offsetHeight, pb = parseFloat(getComputedStyle(sheet).paddingBottom) || 0;
+    var peek = Math.min(H, $("sheetBody").offsetTop + pb + 6);
+    var half = Math.min(H, Math.max(peek + 120, Math.round(window.innerHeight * 0.5)));
+    return { peek: peek, half: half, full: H };
+  }
+  function applyVis(vis) {
+    var H = sheet.offsetHeight; vis = Math.max(0, Math.min(H, vis)); curVis = vis;
+    sheet.style.transform = "translateY(" + (H - vis) + "px)";
+    root.style.setProperty("--sheet-vis", vis + "px");
+    root.style.setProperty("--sheet-hidden", (H - vis) + "px");
+  }
+  function setDetent(name) {
+    if (!/^(peek|half|full)$/.test(name)) name = "half";
+    detent = name; root.setAttribute("data-sheet", name); root.classList.remove("x-dragging");
+    applyVis(detents()[name]);
+  }
+  function onDown(e) {
+    if (e.button > 0) return;
+    drag = { y0: e.clientY, vis0: curVis, moved: false, t: performance.now(), lastY: e.clientY, v: 0, id: e.pointerId, el: e.currentTarget };
+  }
+  function onMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dy = e.clientY - drag.y0;
+    if (!drag.moved) {
+      if (Math.abs(dy) < 6) return;
+      drag.moved = true; root.classList.add("x-dragging");
+      try { drag.el.setPointerCapture(drag.id); } catch (er) {}
+    }
+    var now = performance.now();
+    drag.v = (e.clientY - drag.lastY) / Math.max(1, now - drag.t); drag.t = now; drag.lastY = e.clientY;
+    applyVis(drag.vis0 - dy);
+  }
+  function onUp(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    var d = drag; drag = null;
+    if (!d.moved) return;
+    var D = detents(), aim = curVis - d.v * 200, best = "peek";
+    ["half", "full"].forEach(function (n) { if (Math.abs(D[n] - aim) < Math.abs(D[best] - aim)) best = n; });
+    setDetent(best);
+    /* a drag that ends over a tab is not a tap */
+    var block = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+    sheet.addEventListener("click", block, true);
+    setTimeout(function () { sheet.removeEventListener("click", block, true); }, 0);
+  }
+  [$("sheetGrab"), $("sheetHead")].forEach(function (el) { el.addEventListener("pointerdown", onDown); });
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onUp);
+  $("sheetGrab").addEventListener("click", function () { setDetent(detent === "peek" ? "half" : detent === "half" ? "full" : "peek"); });
+  window.addEventListener("resize", function () { setDetent(detent); });
+  if (window.ResizeObserver) new ResizeObserver(function () { if (!drag) setDetent(detent); }).observe($("sheetHead"));
+
+  /* ---------- tabs: People · Me · Invites · Settings ---------- */
+  var TABS = ["people", "me", "invites", "settings"], ALIAS = { home: "me", circle: "people" };
+  function go(name) {
+    if (name === "map") { setDetent("peek"); return; }
+    name = ALIAS[name] || name;
+    if (TABS.indexOf(name) < 0) name = "people";
+    TABS.forEach(function (n) {
+      $("panel-" + n).hidden = n !== name;
+      var t = document.querySelector(".x-segctl [data-go='" + n + "']"); if (t) t.setAttribute("aria-selected", String(n === name));
+    });
+    $("sheetBody").scrollTop = 0;
+    if (detent === "peek") setDetent("half");
+    try { document.dispatchEvent(new CustomEvent("kt:screen", { detail: name })); } catch (e) {}
+  }
+  document.addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) go(b.dataset.go); });
+  setDetent("half");
+
+  /* ---------- contacts ---------- */
+  var editing = -1;
+  function renderContacts() {
+    var h = $("homeContacts"), s = $("setContacts");
+    if (!S.contacts.length) {
+      h.innerHTML = "<li><span class='x-who'><b>No contacts yet</b><span>Add at least one person to alert.</span></span></li>";
+      s.innerHTML = "<li><span class='x-who'><span>No contacts yet. Add one below.</span></span></li>";
+    } else {
+      h.innerHTML = S.contacts.map(function (c, i) { return "<li><span class='x-who'><b>" + (i + 1) + ". " + esc(c.name || "Contact") + "</b><span>" + esc(c.phone) + "</span></span></li>"; }).join("");
+      s.innerHTML = S.contacts.map(function (c, i) { return "<li><span class='x-who'><b>" + esc(c.name || "Contact") + "</b><span>" + esc(c.phone) + "</span></span>" +
+        "<button class='x-btn x-btn--small' type='button' data-edit='" + i + "'>Edit</button><button class='x-btn x-btn--small' type='button' data-del='" + i + "'>Remove</button></li>"; }).join("");
+    }
+    updateWaLabel();
+  }
+  function resetForm() { editing = -1; $("cName").value = ""; $("cPhone").value = "+267"; $("cSave").textContent = "Add contact"; $("cCancel").hidden = true; }
+  $("setContacts").addEventListener("click", function (e) {
+    var ed = e.target.closest("[data-edit]"), dl = e.target.closest("[data-del]");
+    if (ed) { editing = +ed.dataset.edit; var c = S.contacts[editing]; $("cName").value = c.name || ""; $("cPhone").value = c.phone; $("cSave").textContent = "Save changes"; $("cCancel").hidden = false; $("cName").focus(); }
+    if (dl) { var i = +dl.dataset.del; var n = S.contacts[i].name || S.contacts[i].phone; if (confirm("Remove " + n + "?")) { S.contacts.splice(i, 1); save(); resetForm(); renderContacts(); } }
+  });
+  $("cCancel").addEventListener("click", function () { resetForm(); $("contactMsg").textContent = ""; });
+  $("contactForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg = $("contactMsg"), name = $("cName").value.trim(), phone = cleanPhone($("cPhone").value);
+    msg.classList.add("is-err");
+    if (!/^\+\d{8,15}$/.test(phone)) { msg.textContent = "Enter a full number with country code, e.g. +26771234567."; return; }
+    var c = { name: name || "Contact", phone: phone };
+    if (editing > -1) S.contacts[editing] = c; else S.contacts.push(c);
+    save(); msg.classList.remove("is-err"); msg.textContent = editing > -1 ? "Contact updated." : "Contact added.";
+    resetForm(); renderContacts();
+  });
+
+  /* ---------- PIN ---------- */
+  function renderPinNote() { var def = S.pin === "0000"; $("pinNote").hidden = !def; $("pinHint").textContent = def ? "Default PIN is 0000. Change it now." : "Needed to stop tracking. Keep it secret."; }
+  $("pinForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var m = $("pinMsg"), o = $("pinOld").value, n = $("pinNew").value, r = $("pinRep").value;
+    m.classList.add("is-err");
+    if (o !== S.pin) { m.textContent = "Current PIN is wrong."; return; }
+    if (!/^\d{4}$/.test(n)) { m.textContent = "New PIN must be exactly 4 digits."; return; }
+    if (n !== r) { m.textContent = "New PINs don't match."; return; }
+    S.pin = n; save(); m.classList.remove("is-err"); m.textContent = "PIN saved.";
+    $("pinOld").value = $("pinNew").value = $("pinRep").value = ""; renderPinNote();
+  });
+
+  /* ---------- interval + message ---------- */
+  function renderInterval() { document.querySelectorAll("#intervalSeg button").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.int === S.interval)); }); $("logInt").textContent = "every " + S.interval + " s"; }
+  $("intervalSeg").addEventListener("click", function (e) { var b = e.target.closest("[data-int]"); if (!b) return; S.interval = +b.dataset.int; save(); renderInterval(); if (active) startLogTimer(); });
+  function renderPreview() { $("msgPreview").textContent = message(); }
+  $("customMsg").value = S.message;
+  $("customMsg").addEventListener("input", function () { S.message = this.value.slice(0, 300); save(); renderPreview(); });
+
+  /* ---------- SOS + countdown ---------- */
+  var cdTimer = null, cdLeft = 5, active = false;
+  function setCd(n) { $("cdNum").textContent = n; $("cdNum2").textContent = n; }
+  function startCountdown() {
+    cdLeft = 5; setCd(5); $("countdown").hidden = false; $("cdCancel").focus();
+    if (navigator.vibrate) try { navigator.vibrate(200); } catch (e) {}
+    clearInterval(cdTimer);
+    cdTimer = setInterval(function () { cdLeft--; if (cdLeft <= 0) { endCountdown(); startEmergency(); } else { setCd(cdLeft); if (navigator.vibrate) try { navigator.vibrate(100); } catch (e) {} } }, 1000);
+  }
+  function endCountdown() { clearInterval(cdTimer); cdTimer = null; $("countdown").hidden = true; }
+  $("cdCancel").addEventListener("click", function () { endCountdown(); toast("Alert cancelled"); });
+  $("cdNow").addEventListener("click", function () { endCountdown(); startEmergency(); });
+  function showSOS() { go("me"); setDetent("half"); }
+  $("sosPill").addEventListener("click", showSOS);
+  $("sos").addEventListener("click", function () {
+    if (active) { showSOS(); return; }
+    if (cdTimer) { endCountdown(); startEmergency(); return; }
+    startCountdown();
+  });
+
+  /* ---------- emergency mode ---------- */
+  var watchId = null, logTimer = null, wakeLock = null, firstFix = false, waIdx = 0, points = [], sosStart = 0, pillTimer = null;
+  function tickPill() { var s = Math.max(0, Math.floor((Date.now() - sosStart) / 1000)); $("sosPillTime").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+  function setStatus() {
+    var s = $("status"); s.textContent = active ? "Tracking active" : "Ready"; s.classList.toggle("is-active", active);
+    $("sosPill").hidden = !active; $("sos").classList.toggle("is-active", active);
+    $("sosLabel").textContent = active ? "SOS active" : "SOS";
+    $("sos").setAttribute("aria-label", active ? "SOS active: show tracking details" : "SOS: send emergency alert");
+    clearInterval(pillTimer); pillTimer = null;
+    if (active) { tickPill(); pillTimer = setInterval(tickPill, 1000); }
+    refreshMe();
+  }
+  function updateWaLabel() {
+    var n = S.contacts.length;
+    $("waNext").textContent = n ? "to " + (S.contacts[waIdx % n].name || S.contacts[waIdx % n].phone) + (n > 1 ? " (" + (waIdx % n + 1) + "/" + n + ")" : "") : "no contacts";
+    $("emNoContacts").hidden = n > 0;
+  }
+  function renderEm() {
+    if (!last) return;
+    $("emTime").textContent = hhmmss(last.time);
+    $("emAcc").textContent = "±" + Math.round(last.acc) + " m";
+    $("emCoords").textContent = last.lat.toFixed(5) + ", " + last.lng.toFixed(5);
+    if (active && track) track.addLatLng([last.lat, last.lng]);
+  }
+  function onFix(p) {
+    geoBlocked(false); setPos(p); renderEm(); showHome(); renderPreview();
+    if (!firstFix) { firstFix = true; recordPoint(); autoWhatsApp(); }
+  }
+  function onGeoErr(err) {
+    if (err && err.code === 1) geoBlocked(true);
+    else if (!last) toast("Still searching for GPS… move near a window or outside");
+  }
+  function recordPoint() {
+    if (!last) return;
+    points.unshift({ t: new Date(), lat: last.lat, lng: last.lng, acc: last.acc });
+    $("log").innerHTML = points.slice(0, 200).map(function (pt) { return "<li><span>" + hhmmss(pt.t) + "</span><span>" + pt.lat.toFixed(5) + ", " + pt.lng.toFixed(5) + " ±" + Math.round(pt.acc) + "m</span></li>"; }).join("");
+  }
+  function startLogTimer() { clearInterval(logTimer); logTimer = setInterval(recordPoint, S.interval * 1000); renderInterval(); }
+  async function lockScreen() {
+    try { if ("wakeLock" in navigator && active && document.visibilityState === "visible") { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", function () { wakeLock = null; }); } } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", function () { if (active && !wakeLock && document.visibilityState === "visible") lockScreen(); });
+  function battery() {
+    try {
+      if (!navigator.getBattery) { $("emBatt").textContent = "Not available"; return; }
+      navigator.getBattery().then(function (b) {
+        var show = function () { $("emBatt").textContent = Math.round(b.level * 100) + "%" + (b.charging ? " · charging" : ""); };
+        show(); b.addEventListener("levelchange", show); b.addEventListener("chargingchange", show);
+      }).catch(function () { $("emBatt").textContent = "Not available"; });
+    } catch (e) { $("emBatt").textContent = "Not available"; }
+  }
+  function startEmergency() {
+    if (active) return;
+    active = true; firstFix = false; waIdx = 0; points = [];
+    $("log").innerHTML = "<li>Waiting for first GPS fix…</li>";
+    sosStart = Date.now(); follow = true;
+    $("emergency").hidden = false; showSOS();
+    setStatus(); updateWaLabel(); renderInterval(); battery(); lockScreen();
+    if (track) track.setLatLngs([]);
+    if (last) { renderEm(); recenter(); }
+    if (!navigator.geolocation) { geoBlocked(true); toast("Location unavailable on this device — use Share or Call emergency"); }
+    else { try { watchId = navigator.geolocation.watchPosition(onFix, onGeoErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }); } catch (e) { geoBlocked(true); } }
+    startLogTimer();
+    if (navigator.vibrate) try { navigator.vibrate([300, 100, 300]); } catch (e) {}
+    try { document.dispatchEvent(new CustomEvent("kt:sos", { detail: { active: true } })); } catch (e) {}
+  }
+  function stopEmergency() {
+    active = false;
+    if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+    watchId = null; clearInterval(logTimer); logTimer = null;
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+    $("emergency").hidden = true; setStatus(); toast("Tracking stopped");
+    $("waBtn").classList.remove("is-nudge");
+    try { document.dispatchEvent(new CustomEvent("kt:sos", { detail: { active: false } })); } catch (e) {}
+  }
+
+  /* ---------- sending ---------- */
+  function waUrl(c) { return "https://wa.me/" + c.phone.replace(/\D/g, "") + "?text=" + encodeURIComponent(message()); }
+  function openWa() {
+    if (!S.contacts.length) { toast("Add a contact in Settings first"); return null; }
+    var c = S.contacts[waIdx % S.contacts.length];
+    var w = null; try { w = window.open(waUrl(c), "_blank"); if (w) w.opener = null; } catch (e) {}
+    return { w: w, c: c };
+  }
+  function autoWhatsApp() {
+    if (!S.contacts.length) return;
+    var r = openWa();
+    if (r && r.w) { waIdx++; updateWaLabel(); }
+    else { $("waBtn").classList.add("is-nudge"); toast("Location found — tap Send to WhatsApp"); }
+  }
+  $("waBtn").addEventListener("click", function () {
+    $("waBtn").classList.remove("is-nudge");
+    var r = openWa(); if (!r) return;
+    if (!r.w) { toast("Pop-up blocked — allow pop-ups for this site, or use Send SMS"); return; }
+    waIdx++; updateWaLabel();
+  });
+  $("smsBtn").addEventListener("click", function () {
+    var nums = S.contacts.map(function (c) { return c.phone; }).join(",");
+    location.href = "sms:" + nums + "?body=" + encodeURIComponent(message());
+  });
+  function copy(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { toast("Message copied"); }, function () { fallbackCopy(text); });
+    fallbackCopy(text);
+  }
+  function fallbackCopy(text) {
+    try { var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); var ok = document.execCommand("copy"); ta.remove(); toast(ok ? "Message copied" : "Copy failed — message: " + text); } catch (e) { toast("Copy failed"); }
+  }
+  $("shareBtn").addEventListener("click", function () {
+    var text = message();
+    if (navigator.share) navigator.share({ title: "Emergency", text: text }).catch(function (e) { if (!e || e.name !== "AbortError") copy(text); });
+    else copy(text);
+  });
+
+  /* ---------- PIN keypad ---------- */
+  var entry = "";
+  function drawDots() { document.querySelectorAll("#pinDots span").forEach(function (d, i) { d.classList.toggle("is-on", i < entry.length); }); }
+  function openPad() { entry = ""; drawDots(); $("pinErr").textContent = ""; $("pinModal").hidden = false; var k = document.querySelector("#keys [data-d='1']"); if (k) k.focus(); }
+  function closePad() { $("pinModal").hidden = true; entry = ""; }
+  $("stopBtn").addEventListener("click", openPad);
+  $("keys").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    var k = b.dataset.k;
+    if (k === "cancel") { closePad(); return; }
+    if (k === "del") { entry = entry.slice(0, -1); drawDots(); return; }
+    var d = b.dataset.d;
+    if (!d || entry.length >= 4) return;
+    entry += d; $("pinErr").textContent = ""; drawDots();
+    if (entry.length === 4) {
+      if (entry === S.pin) { closePad(); stopEmergency(); }
+      else {
+        $("pinErr").textContent = "Wrong PIN — try again"; var dots = $("pinDots");
+        dots.classList.remove("is-shake"); void dots.offsetWidth; dots.classList.add("is-shake");
+        if (navigator.vibrate) try { navigator.vibrate(300); } catch (er) {}
+        setTimeout(function () { entry = ""; drawDots(); }, 400);
+      }
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (!$("countdown").hidden && e.key === "Escape") { $("cdCancel").click(); return; }
+    if ($("pinModal").hidden) return;
+    if (/^\d$/.test(e.key) && entry.length < 4) { var btn = document.querySelector("#keys [data-d='" + e.key + "']"); if (btn) btn.click(); }
+    else if (e.key === "Backspace") document.querySelector("[data-k=del]").click();
+    else if (e.key === "Escape") closePad();
+  });
+
+  /* ---------- init ---------- */
+  window.KT = { toast: toast, copy: copy, go: go, last: function () { return last; }, isActive: function () { return active; },
+    map: ensureMap, sheet: setDetent, detent: function () { return detent; }, recenter: recenter, unfollow: function () { follow = false; } };
+  ensureMap();
+  renderContacts(); renderPinNote(); renderInterval(); renderPreview(); setStatus(); locate();
+  window.addEventListener("beforeunload", function (e) { if (active) { e.preventDefault(); e.returnValue = ""; } });
+})();
+    </script>
+    <script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var KT = window.KT, B = window.Backend;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function vib(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
+  function ago(t) {
+    if (!t) return "never";
+    var s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (s < 45) return "just now"; if (s < 3600) return Math.round(s / 60) + " min ago";
+    if (s < 86400) return Math.round(s / 3600) + " h ago"; return Math.round(s / 86400) + " d ago";
+  }
+  function dist(m) {
+    var me = KT.last(); if (!me || m.lat == null) return "—";
+    var R = 6371000, r = Math.PI / 180, dLat = (m.lat - me.lat) * r, dLng = (m.lng - me.lng) * r;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(me.lat * r) * Math.cos(m.lat * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    var d = 2 * R * Math.asin(Math.sqrt(a));
+    return d < 1000 ? Math.round(d) + " m" : (d / 1000).toFixed(d < 10000 ? 1 : 0) + " km";
+  }
+  function at(m) { return "@" + (m.username || "user"); }
+
+  /* ---------- profile ---------- */
+  function renderMe() {
+    var u = B.me.username;
+    $("meHandle").textContent = u ? "@" + u : "No username yet";
+    $("profileCard").hidden = !!u;
+    $("pUser").value = u || ""; $("pName").value = B.me.name || ""; $("pPhone").value = B.me.phone || "+267";
+    $("sUser").value = u || ""; $("sName").value = B.me.name || ""; $("sPhone").value = B.me.phone || "+267";
+    renderInvite();
+  }
+  async function saveProfile(user, name, phone, msgEl) {
+    msgEl.classList.remove("is-err"); msgEl.textContent = "Saving…";
+    try { await B.register({ username: user, name: name, phone: phone }); msgEl.textContent = "Saved as @" + B.me.username; }
+    catch (e) { msgEl.classList.add("is-err"); msgEl.textContent = e.message || "Could not save"; }
+  }
+  $("profileForm").addEventListener("submit", function (e) { e.preventDefault(); saveProfile($("pUser").value, $("pName").value, $("pPhone").value, $("pMsg")); });
+  $("sProfileForm").addEventListener("submit", function (e) { e.preventDefault(); saveProfile($("sUser").value, $("sName").value, $("sPhone").value, $("sMsg")); });
+
+  /* ---------- mode label ---------- */
+  function renderMode() {
+    var demo = B.mode === "demo";
+    document.querySelectorAll(".kt-mode").forEach(function (el) {
+      el.textContent = demo ? "Demo mode — live sync connects to a backend" : (B.statusText || "Live sync");
+      el.classList.toggle("is-live", !demo);
+    });
+    $("simSOS").hidden = !demo;
+  }
+
+  /* ---------- members ---------- */
+  function card(m, actions) {
+    var sos = m.status === "sos";
+    var cls = "kt-member" + (sos ? " is-sos" : "") + (m.alerted && !sos ? " is-alerted" : "");
+    var badge = sos ? "<span class='kt-pill kt-pill--sos'>SOS</span>" : "<span class='kt-pill'>Safe</span>";
+    if (m.alerted && !sos) badge += "<span class='kt-pill kt-pill--alert'>Alerted ✓</span>";
+    var extra = "";
+    if (sos && m.lat != null) extra = "<a class='x-btn x-btn--small x-btn--red' target='_blank' rel='noopener' href='https://www.google.com/maps?q=" + m.lat + "," + m.lng + "'>Open location</a>" +
+      (m.phone ? "<a class='x-btn x-btn--small' href='tel:" + esc(m.phone) + "'>Call</a>" : "");
+    return "<li class='" + cls + "' data-id='" + esc(m.id) + "'>" +
+      "<div class='kt-member__top'><span class='kt-avatar'>" + esc((m.name || m.username || "?").charAt(0).toUpperCase()) + "</span>" +
+      "<span class='x-who'><b>" + esc(m.name || at(m)) + "</b><span>" + esc(at(m)) + " · " + ago(m.lastSeen) + " · " + dist(m) + "</span></span>" + badge + "</div>" +
+      (actions ? "<div class='kt-member__act'>" + extra + "<button class='x-btn x-btn--small kt-buzz' type='button' data-buzz='" + esc(m.id) + "'>❤️ Buzz</button>" +
+      "<button class='x-btn x-btn--small' type='button' data-remove='" + esc(m.id) + "' aria-label='Remove " + esc(at(m)) + "'>Remove</button></div>" : "") +
+      "</li>";
+  }
+  function renderMembers() {
+    var ms = B.members;
+    var meCard = { id: "me", username: B.me.username || "you", name: "You", status: KT.isActive() ? "sos" : "safe", lastSeen: KT.last() ? KT.last().time.getTime() : null, lat: null };
+    $("circleList").innerHTML = card(meCard, false) + (ms.length ? ms.map(function (m) { return card(m, true); }).join("") : "<li class='kt-empty'>No one in your circle yet. Add someone below.</li>");
+    $("emCircle").innerHTML = ms.length ? ms.map(function (m) { return card(m, false); }).join("") : "<li class='kt-empty'>No circle members to alert.</li>";
+    $("circleCount").textContent = ms.length ? ms.length + " member" + (ms.length > 1 ? "s" : "") : "";
+    renderCircleMap();
+  }
+  /* ---------- invites (consent) ---------- */
+  function inviteRow(i) {
+    var u = i.user || {};
+    var head = "<div class='kt-member__top'><span class='kt-avatar'>" + esc((u.name || u.username || "?").charAt(0).toUpperCase()) + "</span>" +
+      "<span class='x-who'><b>" + esc(u.name || at(u)) + "</b><span>" + esc(at(u)) + (i.incoming ? " wants you in their circle" : " · sent " + ago(i.created)) + "</span></span>" +
+      (i.incoming ? "" : "<span class='kt-pill kt-pill--pending'>Pending</span>") + "</div>";
+    var act = i.incoming ? "<div class='kt-member__act'><button class='x-btn x-btn--small x-btn--primary' type='button' data-accept='" + esc(i.id) + "'>Accept</button>" +
+      "<button class='x-btn x-btn--small' type='button' data-decline='" + esc(i.id) + "'>Decline</button></div>" : "";
+    return "<li class='kt-member'>" + head + act + "</li>";
+  }
+  function renderInvites() {
+    var inc = B.invites.filter(function (i) { return i.incoming; }), out = B.invites.filter(function (i) { return !i.incoming; });
+    $("inviteCount").textContent = inc.length ? inc.length + " new" : "";
+    $("inviteList").innerHTML = B.invites.length ? inc.concat(out).map(inviteRow).join("") : "<li class='kt-empty'>No invites right now.</li>";
+    var badge = $("inviteBadge"); badge.hidden = !inc.length; badge.textContent = inc.length ? String(inc.length) : "";
+    $("tabInvites").setAttribute("aria-label", inc.length ? "Invites, " + inc.length + " new" : "Invites");
+  }
+  $("inviteList").addEventListener("click", async function (e) {
+    var a = e.target.closest("[data-accept]"), d = e.target.closest("[data-decline]");
+    if (!a && !d) return;
+    var btn = a || d; btn.disabled = true;
+    try {
+      if (a) { var u = await B.acceptInvite(a.dataset.accept); KT.toast("You and " + at(u) + " are now in each other's circle"); }
+      else { var v = await B.declineInvite(d.dataset.decline); KT.toast("Declined " + at(v)); }
+    } catch (er) { btn.disabled = false; KT.toast(er.message || "Could not update invite"); }
+  });
+
+  $("circleList").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-buzz]"), r = e.target.closest("[data-remove]");
+    if (b) buzz(b.dataset.buzz);
+    if (r) { var m = B.member(r.dataset.remove); if (m && confirm("Remove " + at(m) + " from your circle?")) { try { await B.removeMember(m.id); KT.toast("Removed " + at(m)); } catch (er) { KT.toast(er.message); } } }
+  });
+
+  async function buzz(to) {
+    try {
+      var t = await B.sendBuzz(to);
+      vib(60);
+      KT.toast(to === "all" ? "❤️ Buzzed " + t.length + " in your circle" : "❤️ Buzzed " + at(t[0]));
+    } catch (e) { KT.toast(e.message || "Could not buzz"); }
+  }
+  $("buzzAll").addEventListener("click", function () { buzz("all"); });
+
+  /* ---------- add member ---------- */
+  var addMode = "username";
+  $("addSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mode]"); if (!b) return; addMode = b.dataset.mode;
+    document.querySelectorAll("#addSeg button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    $("addUserWrap").hidden = addMode !== "username"; $("addPhoneWrap").hidden = addMode !== "phone"; $("addInviteWrap").hidden = addMode !== "invite";
+    $("addForm").querySelector("[type=submit]").hidden = addMode === "invite";
+    if (addMode === "invite") renderInvite();
+  });
+  $("addForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var msg = $("addMsg"); msg.classList.remove("is-err"); msg.textContent = "Sending invite…";
+    try {
+      var m = await B.sendInvite(addMode === "phone" ? { phone: $("addPhone").value } : { username: $("addUser").value });
+      msg.textContent = "Invite sent to " + at(m) + ". They join once they accept."; $("addUser").value = ""; $("addPhone").value = "+267";
+    } catch (er) { msg.classList.add("is-err"); msg.textContent = er.message || "Could not send invite"; }
+  });
+
+  /* ---------- invite + QR ---------- */
+  var qr = null, qrFor = null;
+  function renderInvite() {
+    var box = $("qrBox"); if (!box) return;
+    if (!B.me.username) { box.innerHTML = "<p>Pick a username first.</p>"; $("inviteLink").textContent = ""; qrFor = null; return; }
+    var link = B.inviteLink();
+    $("inviteLink").textContent = link;
+    if (qrFor === link) return;
+    qrFor = link; box.innerHTML = "";
+    if (typeof window.QRCode === "undefined") { box.innerHTML = "<p>QR code unavailable offline — share the link instead.</p>"; return; }
+    try { qr = new QRCode(box, { text: link, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M }); }
+    catch (e) { box.innerHTML = "<p>Could not draw QR code.</p>"; }
+  }
+  $("inviteShare").addEventListener("click", function () {
+    if (!B.me.username) { KT.toast("Pick a username first"); return; }
+    var text = "Join my Kwata Tracker circle: " + B.inviteLink();
+    if (navigator.share) navigator.share({ title: "Kwata Tracker invite", text: text }).catch(function () {});
+    else KT.copy(text);
+  });
+  $("inviteCopy").addEventListener("click", function () { if (B.me.username) KT.copy(B.inviteLink()); else KT.toast("Pick a username first"); });
+  /* Opening ?invite=<username> sends that user an invite request; nobody is linked until they accept. */
+  async function checkInvite() {
+    var qs = new URLSearchParams(location.search), raw = qs.get("invite");
+    if (!raw) { var h = /#invite=([^&]+)/.exec(location.hash); if (h) { try { raw = decodeURIComponent(h[1]); } catch (e) { raw = h[1]; } } }
+    if (!raw) return;
+    qs.delete("invite");
+    try { var rest = qs.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "")); } catch (e) {}
+    var u = B.cleanUser(raw);
+    if (!u || u === B.me.username) return;
+    KT.go("circle");
+    var seg = document.querySelector("#addSeg [data-mode=username]"); if (seg) seg.click();
+    $("addUser").value = u;
+    var msg = $("addMsg"); msg.classList.remove("is-err");
+    if (!B.me.username) { msg.textContent = "Pick your username, then tap Send invite to ask @" + u + " to join circles."; return; }
+    msg.textContent = "Sending an invite request to @" + u + "…";
+    try { await B.sendInvite({ username: u }); $("addUser").value = ""; msg.textContent = "Invite sent to @" + u + ". You're connected once they accept."; }
+    catch (er) { msg.classList.add("is-err"); msg.textContent = er.message || "Could not send invite"; }
+  }
+
+  /* ---------- circle map ---------- */
+  /* Avatars on the shared full-screen map; the blue self dot is drawn by the core app. */
+  var cmarkers = {}, fitted = false;
+  function avIcon(m) {
+    var sos = m.status === "sos";
+    return L.divIcon({ className: "", html: "<div class='x-av" + (sos ? " is-sos" : "") + "'><b>" + esc((m.name || m.username || "?").charAt(0).toUpperCase()) + "</b><span>" + esc(sos ? "SOS · " + (m.name || at(m)).split(" ")[0] : (m.name || at(m)).split(" ")[0]) + "</span></div>", iconSize: [0, 0], iconAnchor: [0, 0] });
+  }
+  function focusMember(m) {
+    KT.go("people");
+    var li = document.querySelector("#circleList [data-id='" + (window.CSS && CSS.escape ? CSS.escape(m.id) : m.id) + "']");
+    if (li) { li.scrollIntoView({ block: "center", behavior: "smooth" }); li.classList.remove("is-flash"); void li.offsetWidth; li.classList.add("is-flash"); }
+    KT.toast((m.name || at(m)) + " · " + ago(m.lastSeen) + " · " + dist(m));
+  }
+  function fitEveryone() {
+    var cmap = KT.map(); if (!cmap) return false;
+    var me = KT.last(), pts = B.members.filter(function (m) { return m.lat != null; }).map(function (m) { return [m.lat, m.lng]; });
+    if (me) pts.push([me.lat, me.lng]);
+    if (pts.length > 1) { KT.unfollow(); cmap.fitBounds(pts, { paddingTopLeft: [40, 70], paddingBottomRight: [70, 40], maxZoom: 15 }); return true; }
+    if (pts.length === 1) { cmap.setView(pts[0], 15); return true; }
+    return false;
+  }
+  function renderCircleMap() {
+    var cmap = KT.map(); if (!cmap) return;
+    var withLoc = B.members.filter(function (m) { return m.lat != null; }), seen = {};
+    withLoc.forEach(function (m) {
+      seen[m.id] = 1;
+      if (!cmarkers[m.id]) cmarkers[m.id] = L.marker([m.lat, m.lng], { icon: avIcon(m), title: m.name || at(m), riseOnHover: true }).addTo(cmap).on("click", function () { var cur = B.member(m.id); if (cur) focusMember(cur); });
+      else { cmarkers[m.id].setLatLng([m.lat, m.lng]); cmarkers[m.id].setIcon(avIcon(m)); }
+      cmarkers[m.id].setZIndexOffset(m.status === "sos" ? 1500 : 0);
+    });
+    Object.keys(cmarkers).forEach(function (id) { if (!seen[id]) { cmap.removeLayer(cmarkers[id]); delete cmarkers[id]; } });
+    if (!fitted && withLoc.length && KT.last()) fitted = fitEveryone();
+  }
+  $("fitAll").addEventListener("click", function () { if (!fitEveryone()) KT.toast("No locations to show yet"); else KT.sheet("peek"); });
+
+  /* ---------- map settings ---------- */
+  $("mapProv").value = window.KStore.get("mapProvider", "leaflet");
+  $("gKey").value = window.KStore.get("googleMapsKey", "");
+  $("mapProv").addEventListener("change", function () {
+    window.KStore.set("mapProvider", this.value);
+    $("mapMsg").textContent = this.value === "google" ? "Google Maps adapter isn't built yet — maps keep using Street/Satellite until it is." : "Saved.";
+  });
+  $("gKey").addEventListener("change", function () { window.KStore.set("googleMapsKey", this.value.trim()); $("mapMsg").textContent = "Key saved on this device."; });
+  $("simSOS").addEventListener("click", function () { B.simulateMemberSOS(); });
+
+  /* map style: the layers button and Settings stay in sync */
+  function renderLayer() {
+    var cur = MapProvider.layer(), next = cur === "Street" ? "Satellite" : "Street";
+    document.querySelectorAll("#mapStyleSeg [data-layer]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.layer === cur)); });
+    $("fabLayers").setAttribute("aria-label", "Map style: " + cur + ". Switch to " + next);
+    $("fabLayers").classList.toggle("is-on", cur === "Satellite");
+  }
+  $("fabLayers").addEventListener("click", function () { var n = MapProvider.setLayer(MapProvider.layer() === "Street" ? "Satellite" : "Street"); renderLayer(); KT.toast("Map style: " + n); });
+  $("mapStyleSeg").addEventListener("click", function (e) { var b = e.target.closest("[data-layer]"); if (!b) return; MapProvider.setLayer(b.dataset.layer); renderLayer(); });
+  renderLayer();
+
+  /* appearance: Auto follows the system; Light and Dark use the kit's saved theme */
+  function themePick() { var t = document.documentElement.getAttribute("data-theme"); return t === "light" || t === "dark" ? t : "system"; }
+  function renderTheme() { var cur = themePick(); document.querySelectorAll("#themeSeg [data-theme-pick]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.themePick === cur)); }); }
+  $("themeSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-theme-pick]"); if (!b) return; var t = b.dataset.themePick;
+    if (t === "system") { document.documentElement.removeAttribute("data-theme"); try { localStorage.removeItem("hark-theme"); } catch (er) {} }
+    else { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("hark-theme", t); } catch (er) {} }
+    renderTheme();
+  });
+  renderTheme();
+
+  /* ---------- backend events ---------- */
+  B.subscribe(function (ev) {
+    if (ev.type === "members") renderMembers();
+    else if (ev.type === "invites") renderInvites();
+    else if (ev.type === "invite") { vib([80, 60, 80]); KT.toast("📩 " + at(ev.from) + " invited you to their circle — see Invites"); }
+    else if (ev.type === "me") renderMe();
+    else if (ev.type === "status") renderMode();
+    else if (ev.type === "error") { renderMode(); KT.toast(ev.message); }
+    else if (ev.type === "buzz") { vib([100, 80, 100, 80, 300]); KT.toast("❤️ " + at(ev.from) + " is thinking of you"); }
+    else if (ev.type === "sos") {
+      if (ev.active) { vib([600, 200, 600, 200, 600]); KT.toast("🚨 " + at(ev.member) + " sent an SOS"); }
+      else KT.toast(at(ev.member) + " is safe now");
+    }
+    else if (ev.type === "alerted" && ev.active) { KT.toast(B.members.length ? "Circle alerted (" + B.members.length + ")" : "No circle members to alert"); }
+  });
+
+  /* ---------- hooks from the core app ---------- */
+  var batt = null;
+  try { if (navigator.getBattery) navigator.getBattery().then(function (b) { batt = b; }).catch(function () {}); } catch (e) {}
+  var lastShare = 0;
+  document.addEventListener("kt:pos", function () {
+    var p = KT.last(); if (!p) return;
+    var now = Date.now();
+    if (!KT.isActive() && now - lastShare < 15000) { renderMembers(); return; }
+    lastShare = now;
+    B.shareLocation({ lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null });
+    renderMembers();
+  });
+  document.addEventListener("kt:sos", function (e) {
+    var p = KT.last();
+    B.sendSOS(e.detail.active, p ? { lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null } : null);
+  });
+  document.addEventListener("kt:screen", function (e) {
+    if (e.detail === "people") renderInvite();
+  });
+  setInterval(renderMembers, 30000);
+
+  $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", an African defence company founded by Thuto Leseane.";
+  renderMe(); renderMode(); renderMembers(); renderInvites();
+  B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
+})();
+
+    </script>
+  </body>
+</html>
