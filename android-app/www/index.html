@@ -449,7 +449,7 @@
               <button type="button" data-layer="Street" aria-pressed="true">Street</button>
               <button type="button" data-layer="Satellite" aria-pressed="false">Satellite</button>
             </div>
-            <label class="x-field">Map provider<select id="mapProv"><option value="leaflet">Street (CARTO HD) / Satellite hybrid (Esri)</option><option value="google">Google Maps (needs API key)</option></select></label>
+            <label class="x-field">Map provider<select id="mapProv"><option value="leaflet">Street / Satellite hybrid (Esri, no key)</option><option value="google">Google Maps (needs API key)</option></select></label>
             <label class="x-field">Google Maps API key (for later)<input id="gKey" autocomplete="off" placeholder="Not set" /></label>
             <p class="x-msg" id="mapMsg"></p>
           </div>
@@ -813,7 +813,7 @@ window.KWeather = (function () {
 window.MapProvider = (function () {
   /* High-resolution basemaps, no API keys needed. {r} loads @2x retina tiles on sharp screens. */
   var TILES = {
-    street: { url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", opts: { maxZoom: 20, subdomains: "abcd", className: "x-tiles--street", attribution: "© OpenStreetMap contributors © CARTO" } },
+    street: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, className: "x-tiles--street", attribution: "Map © Esri, HERE, Garmin, © OpenStreetMap contributors" } },
     satellite: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics" } },
     labels: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, pane: "overlayPane" } },
     roads: { url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 20, maxNativeZoom: 19, opacity: 0.85, pane: "overlayPane" } }
@@ -1669,7 +1669,7 @@ window.Backend = (function () {
   }
   async function saveProfile(user, name, phone, msgEl) {
     msgEl.classList.remove("is-err"); msgEl.textContent = "Saving…";
-    try { await B.register({ username: user, name: name, phone: phone }); msgEl.textContent = "Saved as @" + B.me.username; }
+    try { await B.register({ username: user, name: name, phone: phone }); msgEl.textContent = "Saved as @" + B.me.username; if (window.KT) window.KT.toast("Saved. You're @" + B.me.username); }
     catch (e) { msgEl.classList.add("is-err"); msgEl.textContent = e.message || "Could not save"; }
   }
   $("profileForm").addEventListener("submit", function (e) { e.preventDefault(); saveProfile($("pUser").value, $("pName").value, $("pPhone").value, $("pMsg")); });
