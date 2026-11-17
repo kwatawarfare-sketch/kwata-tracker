@@ -360,8 +360,66 @@
         .x-av.is-sos .x-av__bubble::before, .x-av.is-sos .x-av__bubble::after, .x-sosfab.is-active::after { animation: none; }
       }
     </style>
+
+    <style>
+      /* ---------- v1.4 account gate ---------- */
+      .kt-auth { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); background: light-dark(rgb(245 245 247 / 0.72), rgb(10 12 20 / 0.72)); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); overflow-y: auto; }
+      .kt-auth[hidden] { display: none; }
+      .kt-auth__card { width: min(100%, 400px); background: var(--fill-primary-on); color: var(--text-primary); border-radius: 28px; padding: 28px 22px 22px; box-shadow: 0 20px 60px rgb(0 0 0 / 0.18); border: 1px solid var(--stroke-secondary); }
+      .kt-auth__logo { width: 64px; height: 64px; border-radius: 16px; display: block; margin: 0 auto 12px; object-fit: contain; }
+      .kt-auth h1 { font-size: 26px; line-height: 1.15; text-align: center; margin: 0 0 6px; letter-spacing: -0.02em; }
+      .kt-auth__sub { text-align: center; color: var(--text-secondary); margin: 0 0 20px; font-size: 15px; line-height: 1.4; }
+      .kt-auth__btn { width: 100%; min-height: 50px; border-radius: 14px; border: 1px solid var(--stroke-primary); background: var(--fill-primary-on); color: var(--text-primary); font: inherit; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+      .kt-auth__btn--dark { background: var(--fill-primary); color: var(--text-primary-on); border-color: transparent; }
+      .kt-auth__btn:disabled { opacity: 0.55; cursor: default; }
+      .kt-auth__btn svg { width: 20px; height: 20px; flex: none; }
+      .kt-auth__or { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 13px; margin: 16px 0; }
+      .kt-auth__or::before, .kt-auth__or::after { content: ""; flex: 1; height: 1px; background: var(--stroke-primary); }
+      .kt-auth__seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--fill-tertiary); border-radius: 12px; padding: 3px; margin-bottom: 12px; }
+      .kt-auth__seg button { border: 0; background: transparent; color: var(--text-secondary); font: inherit; font-weight: 600; font-size: 14px; padding: 8px; border-radius: 10px; cursor: pointer; }
+      .kt-auth__seg button[aria-pressed="true"] { background: var(--fill-primary-on); color: var(--text-primary); box-shadow: 0 1px 4px rgb(0 0 0 / 0.12); }
+      .kt-auth input { width: 100%; box-sizing: border-box; min-height: 50px; border-radius: 14px; border: 1px solid var(--stroke-primary); background: var(--fill-tertiary); color: var(--text-primary); font: inherit; font-size: 16px; padding: 0 14px; margin-bottom: 10px; }
+      .kt-auth input:focus { outline: 2px solid var(--fill-primary); outline-offset: 1px; }
+      .kt-auth__msg { min-height: 20px; font-size: 14px; color: var(--text-secondary); margin: 2px 0 10px; text-align: center; overflow-wrap: anywhere; }
+      .kt-auth__msg.is-err { color: var(--fill-system-red); }
+      .kt-auth__links { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-top: 14px; }
+      .kt-auth__link { border: 0; background: none; color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; font: inherit; font-size: 14px; cursor: pointer; padding: 6px; }
+      .kt-auth__fine { text-align: center; color: var(--text-secondary); font-size: 12px; margin: 16px 0 0; line-height: 1.4; }
+      .kt-auth [hidden] { display: none !important; }
+      .kt-acct__line { overflow-wrap: anywhere; }
+      .kt-acct__warn { color: var(--fill-system-orange); }
+    </style>
   </head>
   <body>
+    <div class="kt-auth" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+      <div class="kt-auth__card">
+        <img class="kt-auth__logo" src="assets/kwata-logo.png" alt="Kwata" onerror="this.style.display='none'" />
+        <h1 id="authTitle">Kwata Tracker</h1>
+        <p class="kt-auth__sub" id="authSub">Sign in to keep your circle safe on every device.</p>
+        <div id="authMain">
+          <button class="kt-auth__btn" type="button" id="authGoogle"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span id="authGoogleLbl">Continue with Google</span></button>
+          <div class="kt-auth__or">or</div>
+          <div class="kt-auth__seg" id="authSeg">
+            <button type="button" data-am="signin" aria-pressed="true">Sign in</button>
+            <button type="button" data-am="signup" aria-pressed="false">Create account</button>
+          </div>
+        </div>
+        <form id="authForm" novalidate>
+          <input id="authEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Email" />
+          <input id="authPass" type="password" autocomplete="current-password" placeholder="Password" />
+          <input id="authPass2" type="password" autocomplete="new-password" placeholder="Repeat new password" hidden />
+          <p class="kt-auth__msg" id="authMsg" role="status"></p>
+          <button class="kt-auth__btn kt-auth__btn--dark" type="submit" id="authSubmit">Sign in</button>
+        </form>
+        <div class="kt-auth__links">
+          <button class="kt-auth__link" type="button" id="authForgot">Forgot password?</button>
+          <button class="kt-auth__link" type="button" id="authBack" hidden>Back</button>
+          <button class="kt-auth__link" type="button" id="authHave" hidden>I already have an account</button>
+          <button class="kt-auth__link" type="button" id="authLater" hidden>Not now</button>
+        </div>
+        <p class="kt-auth__fine" id="authFine">Your account keeps your circle, profile and settings safe if you sign out or change phones.</p>
+      </div>
+    </div>
     <div class="page" id="top">
       <main class="main">
         <!-- full-screen map -->
@@ -521,6 +579,15 @@
 
             <!-- SETTINGS -->
             <div class="x-panel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+          <div class="x-card" id="acctCard">
+            <h2>Account</h2>
+            <p class="kt-acct__line" id="acctLine">Not signed in</p>
+            <p class="kt-acct__warn" id="acctWarn" hidden>Guest account: your circle is lost if you sign out or clear the app. Save it now.</p>
+            <div class="x-row">
+              <button class="x-btn x-btn--primary" type="button" id="acctSave" hidden>Save your account</button>
+              <button class="x-btn" type="button" id="acctOut" hidden>Sign out</button>
+            </div>
+          </div>
           <div class="x-card">
             <h2>Appearance</h2>
             <div class="x-seg" id="themeSeg">
@@ -1238,6 +1305,9 @@ window.MapProvider = (function () {
         {type:"sos", member, active}, {type:"alerted"}, {type:"status", text}, {type:"error", message} */
 window.Backend = (function () {
   var subs = [];
+  var NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  var AUTH_CB = "kwata://auth-callback";
+  function backTo() { return NATIVE ? AUTH_CB : PUBLIC_URL; }
   var B = {
     mode: (SUPABASE_URL && SUPABASE_ANON_KEY) ? "supabase" : "demo",
     me: { id: "me", username: window.KStore.get("username", ""), name: window.KStore.get("name", ""), phone: window.KStore.get("phone", ""), status: "safe" },
@@ -1310,30 +1380,102 @@ window.Backend = (function () {
         document.head.appendChild(s);
       });
     },
+    ready: false, authing: null,
     init: async function () {
       await Sb.loadLib();
-      Sb.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+      /* PKCE, and no automatic URL parsing: our own ?code=XXXXXX invite links would clash with it */
+      Sb.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: "pkce" } });
+      Sb.client.auth.onAuthStateChange(function (ev, s) { setTimeout(function () { Sb.onAuth(ev, s); }, 0); });
+      if (NATIVE) Sb.nativeHooks();
+      await Sb.handleUrl(location.href, true);
       var sess = (await Sb.client.auth.getSession()).data.session;
-      if (!sess) {
-        var r = await Sb.client.auth.signInAnonymously();
-        if (r.error) throw r.error;
-        sess = r.data.session;
-      }
-      await Sb.afterAuth(sess.user.id);
-      Sb.client.auth.onAuthStateChange(function (ev, s) { if (s && s.user && Sb.uid && s.user.id !== Sb.uid) Sb.afterAuth(s.user.id).catch(function () {}); });
+      Sb.ready = true;
+      if (sess) await Sb.afterAuth(sess.user);
+      else { B.user = null; setStatus("Sign in to sync"); B.emit({ type: "auth", state: "signedOut" }); }
     },
-    afterAuth: async function (uid) {
+    onAuth: function (ev, s) {
+      if (ev === "PASSWORD_RECOVERY") B.emit({ type: "auth", state: "recovery" });
+      if (!Sb.ready) return;
+      if (ev === "SIGNED_OUT" || !s) { if (ev === "SIGNED_OUT") { Sb.uid = null; B.user = null; B.emit({ type: "auth", state: "signedOut" }); } return; }
+      if (s.user.id !== Sb.uid) { Sb.afterAuth(s.user).catch(function (e) { B.emit({ type: "error", message: e.message || String(e) }); }); return; }
+      var wasAnon = B.user && B.user.is_anonymous;
+      B.user = s.user;
+      if (wasAnon && !s.user.is_anonymous) Sb.ensureProfile(s.user).catch(function () {});
+      B.emit({ type: "auth", state: "user" });
+    },
+    hasVerifier: function () {
+      try { for (var i = 0; i < localStorage.length; i++) { if (/-code-verifier$/.test(localStorage.key(i) || "")) return true; } } catch (e) {}
+      return false;
+    },
+    /* Handles an OAuth / reset-password return, on the web (?code=uuid) or from kwata://auth-callback in the app. */
+    handleUrl: async function (url, isWeb) {
+      var u; try { u = new URL(String(url).replace(/^kwata:\/\/auth-callback/, "https://kwata.app/auth-callback")); } catch (e) { return false; }
+      var q = u.searchParams, h = new URLSearchParams(u.hash.replace(/^#/, ""));
+      var err = q.get("error_code") || h.get("error_code") || q.get("error") || h.get("error");
+      var desc = q.get("error_description") || h.get("error_description") || "";
+      var code = q.get("code");
+      var isAuthCode = !!code && code.length > 20 && /^[0-9a-f-]+$/i.test(code) && Sb.hasVerifier();
+      if (!err && !isAuthCode) return false;
+      if (isWeb) {
+        ["code", "error", "error_code", "error_description", "state"].forEach(function (k) { if (k !== "code" || isAuthCode) q.delete(k); });
+        var rest = q.toString();
+        try { history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "")); } catch (e) {}
+      }
+      var linking = window.KStore.get("pendingLink", false);
+      window.KStore.set("pendingLink", false);
+      if (err) {
+        if (linking && /identity_already_exists|already/i.test(err + " " + desc)) {
+          B.emit({ type: "auth", state: "error", message: "That Google account already has a Kwata account. Signing you in to it. Your guest circle stays with the guest account." });
+          setTimeout(function () { B.signInGoogle().catch(function () {}); }, 2200);
+        } else B.emit({ type: "auth", state: "error", message: (desc || err).replace(/\+/g, " ") });
+        return true;
+      }
+      var r = await Sb.client.auth.exchangeCodeForSession(code);
+      if (r.error) B.emit({ type: "auth", state: "error", message: "Sign-in didn't finish: " + r.error.message + ". Try again." });
+      return true;
+    },
+    nativeHooks: function () {
+      var P = window.Capacitor.Plugins || {};
+      if (!P.App) return;
+      function onUrl(url) {
+        if (!url || url.indexOf(AUTH_CB) !== 0) return;
+        try { if (P.Browser) P.Browser.close().catch(function () {}); } catch (e) {}
+        Sb.handleUrl(url, false).catch(function () {});
+      }
+      P.App.addListener("appUrlOpen", function (e) { onUrl(e && e.url); });
+      try { P.App.getLaunchUrl().then(function (r) { onUrl(r && r.url); }).catch(function () {}); } catch (e) {}
+    },
+    /* every real (non-guest) account gets a profiles row */
+    ensureProfile: async function (user) {
+      var p = await Sb.client.from("profiles").select("id").eq("id", user.id).maybeSingle();
+      if (p.data) return;
+      var md = user.user_metadata || {};
+      var local = String(user.email || "").split("@")[0].split("+")[0].replace(/[._\-]+/g, " ").trim();
+      var nm = B.me.name || md.full_name || md.name || local.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) || "Kwata user";
+      await B.register({ name: nm, username: B.me.username || "", phone: B.me.phone || "" });
+    },
+    afterAuth: async function (user) {
       if (B.mode !== "supabase") return;
-      Sb.uid = uid; B.me.id = uid;
-      var p = await Sb.client.from("profiles").select("*").eq("id", uid).maybeSingle();
-      if (p.error) throw p.error;
-      if (p.data) { B.me.username = p.data.username || B.me.username; B.me.name = p.data.name || B.me.name; B.me.phone = p.data.phone || B.me.phone; }
-      else if (B.me.username) { await Sb.client.from("profiles").upsert({ id: uid, username: B.me.username, name: B.me.name, phone: B.me.phone }); }
-      B.emit({ type: "me" });
-      await Sb.loadCircle();
-      await Sb.loadInvites();
-      Sb.realtime();
-      setStatus("Live sync on");
+      var uid = user.id;
+      if (Sb.authing === uid) return; Sb.authing = uid;
+      try {
+        /* a different person signed in on this device: don't carry over the last person's cached profile */
+        var owner = window.KStore.get("uid", "");
+        if (owner && owner !== uid) { B.me.username = ""; B.me.name = ""; B.me.phone = ""; window.KStore.set("username", ""); window.KStore.set("name", ""); window.KStore.set("phone", ""); }
+        window.KStore.set("uid", uid);
+        Sb.uid = uid; B.me.id = uid; B.user = user;
+        var p = await Sb.client.from("profiles").select("*").eq("id", uid).maybeSingle();
+        if (p.error) throw p.error;
+        if (p.data) { B.me.username = p.data.username || ""; B.me.name = p.data.name || B.me.name; B.me.phone = p.data.phone || B.me.phone; window.KStore.set("username", B.me.username); window.KStore.set("name", B.me.name || ""); window.KStore.set("phone", B.me.phone || ""); }
+        else if (!user.is_anonymous) { B.me.username = ""; try { await Sb.ensureProfile(user); } catch (e) { B.emit({ type: "error", message: "Profile not saved yet: " + (e.message || e) }); } }
+        else if (B.me.username) { await Sb.client.from("profiles").upsert({ id: uid, username: B.me.username, name: B.me.name, phone: B.me.phone || null }); }
+        B.emit({ type: "me" });
+        B.emit({ type: "auth", state: "user" });
+        await Sb.loadCircle();
+        await Sb.loadInvites();
+        Sb.realtime();
+        setStatus("Live sync on");
+      } finally { Sb.authing = null; }
     },
     loadCircle: async function () {
       var cm = await Sb.client.from("circle_members").select("member_id").eq("owner_id", Sb.uid);
@@ -1420,10 +1562,59 @@ window.Backend = (function () {
     }
     Demo.init();
   };
-  B.signInEmail = async function (email) {
-    if (B.mode !== "supabase" || !Sb.client) throw new Error("Live sync is not configured");
-    var r = await Sb.client.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } });
-    if (r.error) throw r.error;
+  /* ---------- accounts: Google + email/password ---------- */
+  function need() { if (B.mode !== "supabase" || !Sb.client) throw new Error("Can't reach the Kwata server. Check your connection."); return Sb.client.auth; }
+  function nice(e) {
+    var m = (e && (e.message || e.msg)) || String(e), c = (e && (e.code || e.error_code)) || "";
+    if (/invalid login credentials/i.test(m)) return "Wrong email or password.";
+    if (c === "user_already_exists" || /already registered/i.test(m)) return "That email already has an account. Tap Sign in.";
+    if (c === "email_exists" || /already been registered/i.test(m)) return "That email already has an account. Sign in to it instead.";
+    if (c === "weak_password" || /password should be/i.test(m)) return "Use a password of at least 6 characters.";
+    if (/rate limit|too many/i.test(m)) return "Too many tries. Wait a minute and try again.";
+    if (/fetch|network/i.test(m)) return "No connection. Check your internet and try again.";
+    return m;
+  }
+  B.isNative = NATIVE;
+  B.user = null;
+  B.signInGoogle = async function (opts) {
+    var A = need(), link = !!(opts && opts.link);
+    var o = { provider: "google", options: { redirectTo: backTo(), skipBrowserRedirect: NATIVE, queryParams: { prompt: "select_account" } } };
+    window.KStore.set("pendingLink", link);
+    var r = link ? await A.linkIdentity(o) : await A.signInWithOAuth(o);
+    if (r.error) { window.KStore.set("pendingLink", false); throw new Error(nice(r.error)); }
+    if (NATIVE && r.data && r.data.url) await window.Capacitor.Plugins.Browser.open({ url: r.data.url, windowName: "_self" });
+  };
+  B.signInPassword = async function (email, pw) {
+    var r = await need().signInWithPassword({ email: String(email).trim(), password: pw });
+    if (r.error) throw new Error(nice(r.error));
+  };
+  B.signUpPassword = async function (email, pw) {
+    var r = await need().signUp({ email: String(email).trim(), password: pw });
+    if (r.error) throw new Error(nice(r.error));
+    if (!r.data.session) throw new Error("Check your inbox to confirm your email, then sign in.");
+  };
+  /* guest -> real account, same user id, so the circle and profile stay */
+  B.saveGuestEmail = async function (email, pw) {
+    var A = need();
+    var r = await A.updateUser({ email: String(email).trim() });
+    if (r.error) throw new Error(nice(r.error));
+    var r2 = await A.updateUser({ password: pw });
+    if (r2.error) throw new Error(nice(r2.error));
+    if (r2.data && r2.data.user) { B.user = r2.data.user; await Sb.ensureProfile(r2.data.user); }
+    B.emit({ type: "auth", state: "user" });
+  };
+  B.sendReset = async function (email) {
+    var r = await need().resetPasswordForEmail(String(email).trim(), { redirectTo: backTo() });
+    if (r.error) throw new Error(nice(r.error));
+  };
+  B.setNewPassword = async function (pw) {
+    var r = await need().updateUser({ password: pw });
+    if (r.error) throw new Error(nice(r.error));
+  };
+  B.signOut = async function () {
+    try { if (Sb.client) await Sb.client.auth.signOut(); } catch (e) {}
+    ["username", "name", "phone", "uid", "pendingLink"].forEach(function (k) { window.KStore.set(k, k === "pendingLink" ? false : ""); });
+    location.reload();
   };
   function slug(x) { return String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().replace(/^@/, "").toLowerCase().replace(/[\s.\-]+/g, "_").replace(/[^a-z0-9_]/g, "").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 20); }
   B.register = async function (p) {
@@ -2300,10 +2491,18 @@ window.Backend = (function () {
   /* Opening ?code=XXXXXX connects instantly; the older ?invite=<username> sends a request. */
   async function checkInvite() {
     var qs = new URLSearchParams(location.search), code = qs.get("code"), raw = qs.get("invite");
+    if (code && code.length > 8) code = null; /* a sign-in code, not a 6-character connect code */
     if (!raw) { var h = /#invite=([^&]+)/.exec(location.hash); if (h) { try { raw = decodeURIComponent(h[1]); } catch (e) { raw = h[1]; } } }
-    if (!raw && !code) return;
-    qs.delete("invite"); qs.delete("code");
-    try { var rest = qs.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "")); } catch (e) {}
+    if (raw || code) {
+      qs.delete("invite"); if (code) qs.delete("code");
+      try { var rest = qs.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "")); } catch (e) {}
+      window.KStore.set("pendingInvite", { code: code || "", raw: raw || "" });
+    }
+    if (B.mode === "supabase" && !B.user) return; /* sign in first; the invite waits */
+    var pend = window.KStore.get("pendingInvite", null);
+    if (!pend || (!pend.code && !pend.raw)) return;
+    window.KStore.set("pendingInvite", null);
+    code = pend.code || null; raw = pend.raw || null;
     KT.go("circle");
     if (code) {
       var seg = document.querySelector("#addSeg [data-mode=enter]"); if (seg) seg.click();
@@ -2553,6 +2752,124 @@ window.Backend = (function () {
   });
   renderTheme();
 
+
+  /* ---------- buzz: vibration + chime ---------- */
+  var actx = null;
+  function audio() {
+    try { if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); } if (actx && actx.state === "suspended") actx.resume(); } catch (e) {}
+    return actx;
+  }
+  /* browsers only allow sound after a tap, so unlock audio on the first one */
+  ["pointerdown", "keydown", "touchstart"].forEach(function (t) { document.addEventListener(t, function un() { audio(); document.removeEventListener(t, un, true); }, true); });
+  function chime() {
+    var c = audio(); if (!c) return;
+    var t0 = c.currentTime + 0.02;
+    [[880, 0], [1318.5, 0.18], [880, 0.5], [1318.5, 0.68]].forEach(function (n) {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.value = n[0];
+      g.gain.setValueAtTime(0.0001, t0 + n[1]);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + n[1] + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + 0.32);
+      o.connect(g); g.connect(c.destination); o.start(t0 + n[1]); o.stop(t0 + n[1] + 0.35);
+    });
+  }
+  function buzzAlert() {
+    var H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+    if (H && B.isNative) { [0, 450, 900].forEach(function (d) { setTimeout(function () { try { H.vibrate({ duration: 300 }).catch(function () {}); } catch (e) {} }, d); }); }
+    else vib([300, 150, 300, 150, 300]);
+    chime();
+  }
+  KT.buzzAlert = buzzAlert;
+
+  /* ---------- account gate ---------- */
+  var amode = "signin", dismissed = false;
+  function aMsg(t, err) { var m = $("authMsg"); m.textContent = t || ""; m.classList.toggle("is-err", !!err); }
+  function setMode(mode) {
+    amode = mode;
+    var guest = mode === "upgrade", reset = mode === "reset", rec = mode === "recovery";
+    $("authTitle").textContent = guest ? "Save your account" : reset ? "Reset password" : rec ? "Set a new password" : "Kwata Tracker";
+    $("authSub").textContent = guest ? "You're on a guest account. Save it with Google or email so your circle isn't lost if you sign out or clear the app."
+      : reset ? "Enter your email and we'll send you a reset link. Open it on this phone."
+      : rec ? "Choose a new password for your account."
+      : "Sign in to keep your circle safe on every device.";
+    $("authMain").hidden = reset || rec;
+    $("authSeg").hidden = guest;
+    $("authGoogleLbl").textContent = guest ? "Save with Google" : "Continue with Google";
+    $("authEmail").hidden = rec;
+    $("authPass").hidden = reset;
+    $("authPass2").hidden = !rec;
+    $("authPass").placeholder = rec ? "New password" : "Password";
+    $("authPass").autocomplete = (mode === "signin") ? "current-password" : "new-password";
+    $("authSubmit").textContent = guest ? "Save with email" : reset ? "Send reset link" : rec ? "Save new password" : mode === "signup" ? "Create account" : "Sign in";
+    $("authForgot").hidden = mode !== "signin";
+    $("authBack").hidden = !reset;
+    $("authLater").hidden = !guest;
+    $("authHave").hidden = !guest;
+    $("authFine").hidden = rec || reset;
+    document.querySelectorAll("#authSeg [data-am]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.am === mode)); });
+    aMsg("");
+  }
+  function showGate(mode) { setMode(mode); $("authGate").hidden = false; }
+  function hideGate() { $("authGate").hidden = true; aMsg(""); }
+  function busy(on) { ["authSubmit", "authGoogle"].forEach(function (id) { $(id).disabled = on; }); }
+  $("authSeg").addEventListener("click", function (e) { var b = e.target.closest("[data-am]"); if (b) setMode(b.dataset.am); });
+  $("authForgot").addEventListener("click", function () { setMode("reset"); });
+  $("authBack").addEventListener("click", function () { setMode(B.user && B.user.is_anonymous ? "upgrade" : "signin"); });
+  $("authHave").addEventListener("click", function () { dismissed = true; setMode("signin"); aMsg("Signing in switches to that account. This guest circle won't come with you."); });
+  $("authLater").addEventListener("click", function () { dismissed = true; hideGate(); KT.toast("You can save your account anytime in Settings"); });
+  $("authGoogle").addEventListener("click", async function () {
+    busy(true); aMsg("Opening Google…");
+    try { await B.signInGoogle({ link: amode === "upgrade" }); if (B.isNative) aMsg("Finish in the browser, then you'll come back here."); }
+    catch (e) { aMsg(e.message || "Couldn't open Google sign-in", true); }
+    busy(false);
+  });
+  $("authForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var em = $("authEmail").value.trim(), pw = $("authPass").value, pw2 = $("authPass2").value;
+    if (amode !== "recovery" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { aMsg("Enter a valid email.", true); return; }
+    if (amode !== "reset" && pw.length < 6) { aMsg("Use a password of at least 6 characters.", true); return; }
+    if (amode === "recovery" && pw !== pw2) { aMsg("The passwords don't match.", true); return; }
+    busy(true); aMsg(amode === "reset" ? "Sending…" : "One moment…");
+    try {
+      if (amode === "signin") await B.signInPassword(em, pw);
+      else if (amode === "signup") await B.signUpPassword(em, pw);
+      else if (amode === "upgrade") { await B.saveGuestEmail(em, pw); hideGate(); KT.toast("Account saved. Your circle is safe."); }
+      else if (amode === "reset") { await B.sendReset(em); aMsg("Check your inbox for the reset link. Open it on this phone."); }
+      else if (amode === "recovery") { await B.setNewPassword(pw); hideGate(); KT.toast("Password updated"); }
+      $("authPass").value = ""; $("authPass2").value = "";
+    } catch (er) { aMsg(er.message || "Something went wrong", true); }
+    busy(false);
+  });
+  function renderAccount() {
+    var u = B.user, live = B.mode === "supabase";
+    $("acctCard").hidden = !live;
+    if (!u) { $("acctLine").textContent = "Not signed in"; $("acctWarn").hidden = true; $("acctSave").hidden = true; $("acctOut").hidden = true; return; }
+    var prov = ((u.app_metadata && u.app_metadata.providers) || [u.app_metadata && u.app_metadata.provider]).filter(Boolean).filter(function (p) { return p !== "anonymous"; });
+    var how = prov.map(function (p) { return p === "google" ? "Google" : p === "email" ? "email and password" : p; }).join(" and ");
+    $("acctLine").textContent = u.is_anonymous ? "Guest account" : "Signed in as " + (u.email || "your account") + (how ? " with " + how : "");
+    $("acctWarn").hidden = !u.is_anonymous;
+    $("acctSave").hidden = !u.is_anonymous;
+    $("acctOut").hidden = false;
+  }
+  $("acctSave").addEventListener("click", function () { showGate("upgrade"); });
+  $("acctOut").addEventListener("click", function () {
+    var guest = B.user && B.user.is_anonymous;
+    if (!confirm(guest ? "Sign out of a guest account? Your circle and profile will be lost. Save your account first to keep them." : "Sign out of Kwata Tracker?")) return;
+    B.signOut();
+  });
+  function onAuthEv(ev) {
+    if (ev.state === "signedOut") { renderAccount(); renderMode(); showGate("signin"); }
+    else if (ev.state === "recovery") showGate("recovery");
+    else if (ev.state === "error") { if ($("authGate").hidden) showGate(B.user && B.user.is_anonymous ? "upgrade" : "signin"); aMsg(ev.message, true); }
+    else if (ev.state === "user") {
+      renderAccount();
+      if (amode === "recovery" && !$("authGate").hidden) return;
+      if (B.user && B.user.is_anonymous && !dismissed) { if ($("authGate").hidden || amode !== "upgrade") showGate("upgrade"); }
+      else if (B.user && !B.user.is_anonymous) hideGate();
+      checkInvite();
+    }
+  }
+
   /* ---------- backend events ---------- */
   B.subscribe(function (ev) {
     if (ev.type === "members") renderMembers();
@@ -2561,7 +2878,8 @@ window.Backend = (function () {
     else if (ev.type === "me") renderMe();
     else if (ev.type === "status") renderMode();
     else if (ev.type === "error") { renderMode(); KT.toast(ev.message); }
-    else if (ev.type === "buzz") { vib([100, 80, 100, 80, 300]); KT.toast("❤️ " + at(ev.from) + " is thinking of you"); }
+    else if (ev.type === "buzz") { buzzAlert(); KT.toast("❤️ " + at(ev.from) + " buzzed you"); }
+    else if (ev.type === "auth") onAuthEv(ev);
     else if (ev.type === "sos") {
       if (ev.active) { vib([600, 200, 600, 200, 600]); KT.toast("🚨 " + at(ev.member) + " sent an SOS"); }
       else KT.toast(at(ev.member) + " is safe now");
@@ -2591,7 +2909,7 @@ window.Backend = (function () {
   setInterval(renderMembers, 30000);
 
   $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", a defence technology company under Motswana Intelligence, founded by Thuto Leseane.";
-  renderMe(); renderMode(); renderMembers(); renderInvites();
+  renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount();
   B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
 })();
 
