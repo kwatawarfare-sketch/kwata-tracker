@@ -50,7 +50,7 @@
 
       /* floating map buttons */
       .x-wxfx { position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
-      .x-wxchip { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 12px); left: max(12px, env(safe-area-inset-left)); display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--r-pill, 999px); color: var(--text-primary); font: var(--type-small); cursor: pointer; max-width: calc(100vw - 96px); white-space: nowrap; overflow: hidden; }
+      .x-wxchip { position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 12px); left: max(12px, env(safe-area-inset-left)); display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--r-pill, 999px); color: var(--text-primary); font: var(--type-small); cursor: pointer; max-width: calc(50vw - 52px); white-space: nowrap; overflow: hidden; }
       .x-wxchip b { font-weight: 600; }
       .x-wxchip .x-wx-wind { color: var(--text-secondary); }
       .x-wxchip.is-off { opacity: .6; }
@@ -71,7 +71,7 @@
       .x-fab.is-on { color: var(--x-blue); }
 
       /* SOS active pill (top) and SOS capsule (above the sheet) */
-      .x-sospill { position: fixed; z-index: 30; top: calc(env(safe-area-inset-top) + 58px); left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) var(--size-small)/1 var(--sans); white-space: nowrap; box-shadow: 0 6px 20px color-mix(in srgb, var(--fill-system-red) 40%, transparent); cursor: pointer; }
+      .x-sospill { position: fixed; z-index: 30; top: calc(env(safe-area-inset-top) + 86px); left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--fill-system-red); color: var(--hero-text); font: var(--weight-bold) var(--size-small)/1 var(--sans); white-space: nowrap; box-shadow: 0 6px 20px color-mix(in srgb, var(--fill-system-red) 40%, transparent); cursor: pointer; }
       .x-sospill i { width: 8px; height: 8px; border-radius: 50%; background: var(--hero-text); animation: x-blink 1s infinite; }
       .x-sospill span { font-variant-numeric: tabular-nums; font-weight: var(--weight-regular); }
 
@@ -254,7 +254,7 @@
       .x-medot { position: relative; width: 24px; height: 24px; border-radius: 50%; background: var(--x-blue); border: 3.5px solid #fff; animation: x-halo 2.4s ease-out infinite; transform: none; left: auto; top: auto; }
 
       /* map controls: one blurred group, top-right, below the SOS button */
-      .x-fabs { top: calc(env(safe-area-inset-top) + 88px); gap: 10px; transition: opacity var(--dur-quick); }
+      .x-fabs { top: calc(env(safe-area-inset-top) + 12px); gap: 10px; transition: opacity var(--dur-quick); }
       .x-fabgroup { border-radius: 14px; box-shadow: 0 6px 22px rgb(0 0 0 / 0.16); }
       .x-fab { width: 44px; height: 44px; }
       .x-fab svg { width: 20px; height: 20px; }
@@ -386,6 +386,59 @@
       .kt-auth__link { border: 0; background: none; color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; font: inherit; font-size: 14px; cursor: pointer; padding: 6px; }
       .kt-auth__fine { text-align: center; color: var(--text-secondary); font-size: 12px; margin: 16px 0 0; line-height: 1.4; }
       .kt-auth [hidden] { display: none !important; }
+      /* ---------- v1.5 3D avatars, walking, steps ---------- */
+      .x-av__face.is-3d, .x-ava.is-3d { background: radial-gradient(circle at 50% 35%, #ffffff, #dfe6f2) !important; overflow: visible; }
+      .x-av__face.is-3d img, .x-ava.is-3d img { width: 118%; height: 118%; object-fit: contain; transform: translateY(-6%); filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.28)); }
+      .x-av.is-walk .x-av__bubble { animation: kt-walk 0.55s ease-in-out infinite alternate; }
+      .x-av.is-walk .x-av__bubble::after { content: ""; position: absolute; left: 50%; bottom: -18px; width: 30px; height: 7px; margin-left: -15px; border-radius: 50%; background: rgb(0 0 0 / 0.18); filter: blur(2px); }
+      @keyframes kt-walk { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-6px) rotate(4deg); } }
+      .x-av__steps { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); padding: 2px 7px; border-radius: 999px; background: #111; color: #fff; font: 600 11px/1.3 var(--sans); white-space: nowrap; pointer-events: none; }
+      .x-medot.has-av { width: 44px; height: 44px; padding: 0; overflow: visible; background: radial-gradient(circle at 50% 35%, #fff, #dfe6f2); border: 3px solid var(--x-blue); display: grid; place-items: center; }
+      .x-medot.has-av img { width: 120%; height: 120%; object-fit: contain; transform: translateY(-8%); filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.3)); pointer-events: none; }
+      .kt-avpick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+      .kt-avpick button { aspect-ratio: 1; border-radius: 16px; border: 2px solid transparent; background: var(--fill-tertiary); padding: 6px; cursor: pointer; }
+      .kt-avpick button img { width: 100%; height: 100%; object-fit: contain; display: block; }
+      .kt-avpick button[aria-pressed="true"] { border-color: var(--x-blue, #0a84ff); background: color-mix(in srgb, #0a84ff 14%, var(--fill-tertiary)); }
+      /* ---------- v1.5 polish: Instagram-style stories, crisper cards, tab icons ---------- */
+      .x-segctl button svg { width: 17px; height: 17px; flex: none; }
+      .x-segctl button[aria-selected="true"] { color: var(--x-blue, #0a84ff); }
+      .kt-stories { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px; margin: 0 -2px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+      .kt-stories::-webkit-scrollbar { display: none; }
+      .kt-story { flex: none; width: 70px; display: grid; justify-items: center; gap: 6px; border: 0; background: none; padding: 0; cursor: pointer; scroll-snap-align: start; color: var(--text-primary); -webkit-tap-highlight-color: transparent; }
+      .kt-story__ring { position: relative; width: 66px; height: 66px; border-radius: 50%; padding: 2.5px; background: conic-gradient(from 210deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75); transition: transform 180ms var(--x-spring, ease); }
+      .kt-story:active .kt-story__ring { transform: scale(0.93); }
+      .kt-story__ring.is-me { background: linear-gradient(135deg, #4aa3ff, #0a6cff); }
+      .kt-story__ring.is-sos { background: conic-gradient(#ff3b30, #ff8a80, #ff3b30); animation: kt-spin 1.4s linear infinite; }
+      .kt-story__ring.is-walk { background: conic-gradient(from 0deg, #34c759, #a8f0b8, #34c759); }
+      .kt-story__ring.is-old { background: var(--fill-tertiary, #ccc); }
+      .kt-story__ring.is-add { background: none; border: 2px dashed color-mix(in srgb, var(--text-primary) 30%, transparent); padding: 0; }
+      .kt-story__in { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--fill-primary-on, #fff); background: radial-gradient(circle at 50% 35%, #fff, #dfe6f2); display: grid; place-items: center; overflow: hidden; font: 700 20px/1 var(--sans); color: #fff; }
+      .kt-story__ring.is-sos .kt-story__in, .kt-story__ring.is-sos { animation: none; }
+      .kt-story__ring.is-sos { animation: kt-pulse 1.2s ease-in-out infinite; }
+      .kt-story__in img { width: 112%; height: 112%; object-fit: contain; transform: translateY(4%); }
+      .kt-story__ring.is-add .kt-story__in { border: 0; background: none; color: var(--text-primary); font-size: 28px; font-weight: 400; }
+      .kt-story__dot { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border-radius: 50%; background: #34c759; border: 3px solid var(--fill-primary-on, #fff); }
+      .kt-story__name { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.2 var(--sans); }
+      .kt-story__sub { margin-top: -4px; font: 500 10.5px/1.2 var(--sans); color: var(--text-secondary); }
+      @keyframes kt-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgb(255 59 48 / 0.18); } }
+      @keyframes kt-spin { to { transform: rotate(1turn); } }
+      #todayCard { background: linear-gradient(135deg, color-mix(in srgb, #34c759 10%, var(--fill-primary-on, #fff)), var(--fill-primary-on, #fff)); }
+      #stepsRing { transition: stroke-dasharray 600ms var(--ease-out, ease); }
+      .kt-ring circle:first-child { stroke: color-mix(in srgb, var(--text-primary) 10%, transparent); }
+      .x-sosfab::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgb(242 52 44 / 0.35); animation: kt-sosring 2.4s ease-out infinite; pointer-events: none; }
+      @keyframes kt-sosring { from { transform: scale(0.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) { .kt-story__ring.is-sos, .x-sosfab::before { animation: none; } }
+      .kt-switchrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+      .kt-switch { width: 51px; height: 31px; border-radius: 999px; border: 0; padding: 2px; background: var(--fill-tertiary, #ddd); cursor: pointer; transition: background 200ms; }
+      .kt-switch i { display: block; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.25); transition: transform 260ms var(--x-spring, ease); }
+      .kt-switch[aria-checked="true"] { background: #34c759; } .kt-switch[aria-checked="true"] i { transform: translateX(20px); }
+      .kt-today { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+      .kt-today__av { width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff, #dfe6f2); display: grid; place-items: center; overflow: visible; }
+      .kt-today__av img { width: 115%; height: 115%; object-fit: contain; transform: translateY(-6%); filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.25)); }
+      .kt-today__num { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+      .kt-today__lbl { color: var(--text-secondary); font-size: 14px; }
+      .kt-ring { width: 54px; height: 54px; }
+      @media (prefers-reduced-motion: reduce) { .x-av.is-walk .x-av__bubble { animation: none; } }
       .kt-acct__line { overflow-wrap: anywhere; }
       .kt-acct__warn { color: var(--fill-system-orange); }
     </style>
@@ -474,10 +527,10 @@
             </div>
             <p class="x-sheet__meta"><span class="kt-handle" id="meHandle"></span><span class="kt-mode">Demo mode — live sync connects to a backend</span></p>
             <div class="x-segctl" role="tablist" aria-label="Sections">
-              <button type="button" role="tab" id="tab-people" data-go="people" aria-controls="panel-people" aria-selected="true">People</button>
-              <button type="button" role="tab" id="tab-me" data-go="me" aria-controls="panel-me" aria-selected="false">Me</button>
-              <button type="button" role="tab" id="tabInvites" data-go="invites" aria-controls="panel-invites" aria-selected="false">Invites<span class="x-badge" id="inviteBadge" hidden></span></button>
-              <button type="button" role="tab" id="tab-settings" data-go="settings" aria-controls="panel-settings" aria-selected="false">Settings</button>
+              <button type="button" role="tab" id="tab-people" data-go="people" aria-controls="panel-people" aria-selected="true"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='9' cy='8' r='3.5'/><path d='M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6'/><circle cx='17' cy='9' r='2.6'/><path d='M17 14.2c2.6.2 4.5 2.2 4.5 5'/></svg>People</button>
+              <button type="button" role="tab" id="tab-me" data-go="me" aria-controls="panel-me" aria-selected="false"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z'/><circle cx='12' cy='9.5' r='2.6'/></svg>Me</button>
+              <button type="button" role="tab" id="tabInvites" data-go="invites" aria-controls="panel-invites" aria-selected="false"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6h16v12H4z'/><path d='m4 7 8 6 8-6'/></svg>Invites<span class="x-badge" id="inviteBadge" hidden></span></button>
+              <button type="button" role="tab" id="tab-settings" data-go="settings" aria-controls="panel-settings" aria-selected="false"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'/></svg>Settings</button>
             </div>
           </header>
 
@@ -498,6 +551,15 @@
                   <p class="x-msg" id="pMsg"></p>
                   <button class="x-btn x-btn--primary" type="submit">Save profile</button>
                 </form>
+              </div>
+              <div class="kt-stories" id="stories" role="list" aria-label="Your circle"></div>
+              <div class="x-card" id="todayCard">
+                <div class="kt-today">
+                  <span class="kt-today__av" id="todayAv"></span>
+                  <div><div class="kt-today__num" id="stepsNum">0</div><div class="kt-today__lbl" id="stepsLbl">steps today</div></div>
+                  <svg class="kt-ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--fill-tertiary)" stroke-width="4"/><circle id="stepsRing" cx="18" cy="18" r="15.5" fill="none" stroke="#00a665" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" pathLength="100" transform="rotate(-90 18 18)"/></svg>
+                </div>
+                <div class="x-row" style="margin-top:10px"><button class="x-btn x-btn--small" type="button" id="todayPick">Change avatar</button><button class="x-btn x-btn--small" type="button" id="stepsStart" hidden>Turn on step counting</button></div>
               </div>
               <div class="x-card">
                 <div class="x-card__head"><h2>Circle <span class="x-count" id="circleCount"></span></h2><button class="x-link" type="button" id="fitAll">Show everyone</button></div>
@@ -639,6 +701,16 @@
             <p class="x-mono" id="msgPreview"></p>
           </div>
 
+          <div class="x-card">
+            <div class="kt-switchrow"><div><h2 style="margin:0">Background tracking</h2><p id="bgState" style="margin:4px 0 0"></p></div>
+            <button class="kt-switch" id="bgToggle" type="button" role="switch" aria-checked="true" aria-label="Background tracking"><i></i></button></div>
+          </div>
+          <div class="x-card" id="avCard">
+            <h2>Your 3D avatar</h2>
+            <p>Your circle sees this on the map. It bobs along when you're walking.</p>
+            <div class="kt-avpick" id="avPick" role="group" aria-label="Pick your avatar"></div>
+            <p class="fineprint">3D emoji by Microsoft Fluent UI (MIT licence).</p>
+          </div>
           <div class="x-card">
             <h2>Profile</h2>
             <form id="sProfileForm" class="x-form" novalidate>
@@ -1079,6 +1151,7 @@ window.MapProvider = (function () {
           fadeDuration: 120, dragRotate: true, pitchWithRotate: true, touchPitch: true, cooperativeGestures: false
         });
         m.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "© OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors" }), "bottom-right");
+        m.once("load", function () { var at_ = el.querySelector(".maplibregl-ctrl-attrib"); if (at_) at_.classList.remove("maplibregl-compact-show"); });
         try { m.touchZoomRotate.enableRotation(); } catch (e) {}
 
         function firstSymbol() { var ls = m.getStyle().layers || []; for (var i = 0; i < ls.length; i++) if (ls[i].type === "symbol") return ls[i].id; return undefined; }
@@ -1310,7 +1383,7 @@ window.Backend = (function () {
   function backTo() { return NATIVE ? AUTH_CB : PUBLIC_URL; }
   var B = {
     mode: (SUPABASE_URL && SUPABASE_ANON_KEY) ? "supabase" : "demo",
-    me: { id: "me", username: window.KStore.get("username", ""), name: window.KStore.get("name", ""), phone: window.KStore.get("phone", ""), status: "safe" },
+    me: { id: "me", avatar: window.KStore.get("avatar", ""), username: window.KStore.get("username", ""), name: window.KStore.get("name", ""), phone: window.KStore.get("phone", ""), status: "safe" },
     members: [],
     invites: [], /* pending only: { id, incoming, user: {id, username, name, phone}, created } */
     alerted: false,
@@ -1461,12 +1534,12 @@ window.Backend = (function () {
       try {
         /* a different person signed in on this device: don't carry over the last person's cached profile */
         var owner = window.KStore.get("uid", "");
-        if (owner && owner !== uid) { B.me.username = ""; B.me.name = ""; B.me.phone = ""; window.KStore.set("username", ""); window.KStore.set("name", ""); window.KStore.set("phone", ""); }
+        if (owner && owner !== uid) { B.me.avatar = ""; window.KStore.set("avatar", ""); B.me.username = ""; B.me.name = ""; B.me.phone = ""; window.KStore.set("username", ""); window.KStore.set("name", ""); window.KStore.set("phone", ""); }
         window.KStore.set("uid", uid);
         Sb.uid = uid; B.me.id = uid; B.user = user;
         var p = await Sb.client.from("profiles").select("*").eq("id", uid).maybeSingle();
         if (p.error) throw p.error;
-        if (p.data) { B.me.username = p.data.username || ""; B.me.name = p.data.name || B.me.name; B.me.phone = p.data.phone || B.me.phone; window.KStore.set("username", B.me.username); window.KStore.set("name", B.me.name || ""); window.KStore.set("phone", B.me.phone || ""); }
+        if (p.data) { B.me.avatar = p.data.avatar || B.me.avatar || ""; window.KStore.set("avatar", B.me.avatar); B.me.username = p.data.username || ""; B.me.name = p.data.name || B.me.name; B.me.phone = p.data.phone || B.me.phone; window.KStore.set("username", B.me.username); window.KStore.set("name", B.me.name || ""); window.KStore.set("phone", B.me.phone || ""); }
         else if (!user.is_anonymous) { B.me.username = ""; try { await Sb.ensureProfile(user); } catch (e) { B.emit({ type: "error", message: "Profile not saved yet: " + (e.message || e) }); } }
         else if (B.me.username) { await Sb.client.from("profiles").upsert({ id: uid, username: B.me.username, name: B.me.name, phone: B.me.phone || null }); }
         B.emit({ type: "me" });
@@ -1482,14 +1555,14 @@ window.Backend = (function () {
       if (cm.error) throw cm.error;
       var ids = (cm.data || []).map(function (r) { return r.member_id; });
       if (!ids.length) { B.members = []; B.emit({ type: "members" }); return; }
-      var pr = await Sb.client.from("profiles").select("id,username,name,phone").in("id", ids);
+      var pr = await Sb.client.from("profiles").select("id,username,name,phone,avatar").in("id", ids);
       var lo = await Sb.client.from("locations").select("*").in("user_id", ids);
       var so = await Sb.client.from("sos_events").select("*").in("user_id", ids).eq("active", true);
       var locs = {}; (lo.data || []).forEach(function (l) { locs[l.user_id] = l; });
       var sos = {}; (so.data || []).forEach(function (s) { sos[s.user_id] = s; });
       B.members = (pr.data || []).map(function (p) {
         var l = locs[p.id];
-        return { id: p.id, username: p.username, name: p.name, phone: p.phone, lat: l ? l.lat : null, lng: l ? l.lng : null,
+        return { id: p.id, username: p.username, name: p.name, phone: p.phone, avatar: p.avatar || "", steps: l && l.steps != null ? l.steps : null, stepsDay: l ? l.steps_day : null, lat: l ? l.lat : null, lng: l ? l.lng : null,
           lastSeen: l ? Date.parse(l.updated_at) : null, battery: l ? l.battery : null, status: sos[p.id] ? "sos" : (l && l.status) || "safe", alerted: B.alerted };
       });
       B.emit({ type: "members" });
@@ -1514,6 +1587,7 @@ window.Backend = (function () {
         .on("postgres_changes", { event: "*", schema: "public", table: "locations" }, function (pl) {
           var l = pl.new; var m = l && B.member(l.user_id); if (!m) return;
           m.lat = l.lat; m.lng = l.lng; m.lastSeen = Date.parse(l.updated_at) || Date.now(); if (l.battery != null) m.battery = l.battery;
+          if (l.steps != null) { m.steps = l.steps; m.stepsDay = l.steps_day; }
           if (m.status !== "sos") m.status = l.status || "safe";
           B.emit({ type: "members" });
         })
@@ -1612,7 +1686,9 @@ window.Backend = (function () {
     if (r.error) throw new Error(nice(r.error));
   };
   B.signOut = async function () {
+    try { var pt = window.KStore.get("pushToken", ""); if (pt && Sb.client && Sb.uid) await Sb.client.from("push_tokens").delete().eq("token", pt); } catch (e) {}
     try { if (Sb.client) await Sb.client.auth.signOut(); } catch (e) {}
+    window.KStore.set("avatar", "");
     ["username", "name", "phone", "uid", "pendingLink"].forEach(function (k) { window.KStore.set(k, k === "pendingLink" ? false : ""); });
     location.reload();
   };
@@ -1748,8 +1824,40 @@ window.Backend = (function () {
   B.shareLocation = async function (loc) {
     B.me.lat = loc.lat; B.me.lng = loc.lng;
     if (B.mode === "supabase" && Sb.uid) {
-      try { await Sb.client.from("locations").upsert({ user_id: Sb.uid, lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, battery: loc.battery, status: B.me.status, updated_at: new Date().toISOString() }); } catch (e) {}
+      var row = { user_id: Sb.uid, lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, battery: loc.battery, status: B.me.status, updated_at: new Date().toISOString() };
+      if (loc.steps != null) { row.steps = loc.steps; row.steps_day = loc.stepsDay; }
+      try { var r = await Sb.client.from("locations").upsert(row); if (r.error && loc.steps != null) { delete row.steps; delete row.steps_day; await Sb.client.from("locations").upsert(row); } } catch (e) {}
     }
+  };
+  B.setAvatar = async function (id) {
+    B.me.avatar = id || ""; window.KStore.set("avatar", B.me.avatar);
+    if (B.mode === "supabase" && Sb.uid && B.me.username) {
+      var r = await Sb.client.from("profiles").update({ avatar: B.me.avatar || null }).eq("id", Sb.uid);
+      if (r.error) throw new Error(r.error.message);
+    }
+    B.emit({ type: "me" });
+  };
+  /* ---------- push: Buzz rings the phone even when the app is closed (Android, Firebase) ---------- */
+  var pushHooked = false;
+  B.registerPush = async function () {
+    if (!NATIVE || B.mode !== "supabase" || !Sb.uid) return;
+    var P = window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications; if (!P) return;
+    if (B._pushFor === Sb.uid) return; B._pushFor = Sb.uid;
+    try { await P.createChannel({ id: "kwata_buzz", name: "Buzz (I love you)", description: "When someone in your circle buzzes you", importance: 5, visibility: 1, vibration: true, lights: true, lightColor: "#E53935" }); } catch (e) {}
+    try { await P.createChannel({ id: "kwata_sos", name: "SOS alerts", description: "When someone in your circle sends an SOS", importance: 5, visibility: 1, vibration: true, lights: true, lightColor: "#FF0000" }); } catch (e) {}
+    var perm = await P.checkPermissions();
+    if (perm.receive !== "granted") perm = await P.requestPermissions();
+    if (perm.receive !== "granted") { B.emit({ type: "status", text: B.statusText }); return; }
+    if (!pushHooked) {
+      pushHooked = true;
+      P.addListener("registration", function (t) {
+        window.KStore.set("pushToken", t.value);
+        if (Sb.uid) Sb.client.rpc("register_push_token", { t: t.value, p: "android" }).then(function (r) { if (r.error) console.error(r.error); });
+      });
+      P.addListener("registrationError", function (e) { console.error("push", e); });
+      P.addListener("pushNotificationActionPerformed", function () { try { window.KT && window.KT.go("people"); } catch (e) {} });
+    }
+    await P.register();
   };
   B.sendBuzz = async function (to) {
     var targets = to === "all" ? B.members : B.members.filter(function (m) { return m.id === to; });
@@ -1959,8 +2067,8 @@ window.Backend = (function () {
 
   /* ---------- SOS button: a tap starts the countdown; a drag (past 6 px) moves it.
      It springs to the nearest side, stays inside the safe area and above the sheet, and remembers its spot. ---------- */
-  var sosBtn = $("sos"), SOS_SZ = 64, SOS_M = 12, sosPos = window.KStore.get("sosPos", null), sosDrag = null, sosDragged = false;
-  if (!sosPos || (sosPos.side !== "l" && sosPos.side !== "r")) sosPos = { side: "r", y: null };
+  var sosBtn = $("sos"), SOS_SZ = 64, SOS_M = 12, sosPos = window.KStore.get("sosPos2", null), sosDrag = null, sosDragged = false;
+  if (!sosPos || ["l", "c", "r"].indexOf(sosPos.side) < 0) sosPos = { side: "c", y: null }; /* default: top centre */
   function sosBounds() {
     var s = safe(), wide = innerWidth > 760;
     var minX = (wide ? 432 : s.l) + SOS_M, maxX = innerWidth - s.r - SOS_M - SOS_SZ, minY = s.t + SOS_M;
@@ -1971,7 +2079,7 @@ window.Backend = (function () {
   function snapSos() {
     if (!sosBtn || sosDrag && sosDrag.moved) return;
     var b = sosBounds(), y = sosPos.y == null ? b.minY : Math.min(b.maxY, Math.max(b.minY, sosPos.y));
-    placeSos(sosPos.side === "l" ? b.minX : b.maxX, y);
+    placeSos(sosPos.side === "l" ? b.minX : sosPos.side === "c" ? (b.minX + b.maxX) / 2 : b.maxX, y);
   }
   sosBtn.addEventListener("pointerdown", function (e) {
     if (e.button > 0) return;
@@ -1997,8 +2105,9 @@ window.Backend = (function () {
     if (!d.moved) return;
     sosBtn.classList.remove("is-drag");
     var r = sosBtn.getBoundingClientRect(), cx = r.left + r.width / 2 + Math.max(-1.5, Math.min(1.5, d.vx)) * 120;
-    sosPos = { side: cx < innerWidth / 2 ? "l" : "r", y: r.top };
-    window.KStore.set("sosPos", sosPos);
+    var bb = sosBounds(), third = (bb.maxX + SOS_SZ - bb.minX) / 3, rel = cx - bb.minX;
+    sosPos = { side: rel < third ? "l" : rel > 2 * third ? "r" : "c", y: r.top };
+    window.KStore.set("sosPos2", sosPos);
     snapSos();
     sosDragged = true; setTimeout(function () { sosDragged = false; }, 400); /* the click that ends a drag is not an SOS */
   }
@@ -2126,6 +2235,7 @@ window.Backend = (function () {
     geoBlocked(false); setPos(p); renderEm(); showHome(); renderPreview();
     if (!firstFix) { firstFix = true; recordPoint(); autoWhatsApp(); }
   }
+  window.KTfix = function (p) { if (active) onFix(p); else { geoBlocked(false); setPos(p); } };
   function onGeoErr(err) {
     if (err && err.code === 1) geoBlocked(true);
     else if (!last) toast("Still searching for GPS… move near a window or outside");
@@ -2315,8 +2425,11 @@ window.Backend = (function () {
   function grad(m) { var s = String(m.id || m.username || ""), h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return "linear-gradient(180deg," + GRADS[Math.abs(h) % GRADS.length] + ")"; }
   function initials(m) { var w = String(m.name || m.username || "?").trim().split(/\s+/).filter(Boolean); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); }
   function first(m) { return String(m.name || at(m)).split(" ")[0]; }
+  var AVATARS = ["man","woman","boy","girl","oldman","oldwoman","baby","ninja","guard","astronaut","lion","leopard","elephant","zebra","eagle","dog","cat","robot","alien","fire"];
+  function avSrc(id) { return AVATARS.indexOf(id) >= 0 ? "assets/avatars/" + id + ".png" : ""; }
   function face(m, cls) {
-    var sos = m.status === "sos", img = m.photo || m.avatar_url;
+    var sos = m.status === "sos", a3 = avSrc(m.avatar), img = a3 || m.photo || m.avatar_url;
+    if (a3 && !sos) return "<span class='" + cls + " is-3d' aria-hidden='true'><img alt='' src='" + a3 + "' /></span>";
     return "<span class='" + cls + (sos ? " is-sos" : "") + "' style='background:" + (sos ? "var(--fill-system-red)" : (m.id === "me" ? "linear-gradient(180deg,#4aa3ff,#0a6cff)" : grad(m))) + "' aria-hidden='true'>" +
       (img ? "<img alt='' src='" + esc(img) + "' loading='lazy' />" : esc(initials(m))) + "</span>";
   }
@@ -2325,7 +2438,9 @@ window.Backend = (function () {
     var b = Math.max(0, Math.min(100, Math.round(m.battery))), w = Math.max(1, Math.round(b / 100 * 12));
     return " · <span class='x-batt" + (b <= 20 ? " is-low" : "") + "'><svg viewBox='0 0 18 10' aria-hidden='true'><rect x='.5' y='.5' width='15' height='9' rx='2.5' fill='none' stroke='currentColor' opacity='.5'/><rect x='16.3' y='3.2' width='1.4' height='3.6' rx='.7' fill='currentColor' opacity='.5'/><rect x='2' y='2' width='" + w + "' height='6' rx='1.3' fill='currentColor'/></svg>" + b + "%</span>";
   }
-  function subText(m) { return (m.status === "sos" ? "SOS · " : "") + ago(m.lastSeen) + (m.lat != null ? " · " + dist(m) : " · no location yet"); }
+  function stepsOf(m) { return m.steps != null && m.stepsDay === Steps.dayStr() ? m.steps : (m.steps != null && m.lastSeen && Date.now() - m.lastSeen < 6 * 3600000 ? m.steps : null); }
+  function fmtN(n) { try { return Number(n).toLocaleString(); } catch (e) { return String(n); } }
+  function subText(m) { var st = stepsOf(m); return (m.status === "sos" ? "SOS · " : "") + (isWalking(m) ? "Walking · " : "") + ago(m.lastSeen) + (m.lat != null ? " · " + dist(m) : " · no location yet") + (st ? " · " + fmtN(st) + " steps" : ""); }
   var ICON = {
     dir: "<svg viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d='M21.7 11.3l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5z'/></svg>",
     chev: "<svg class='x-chev' viewBox='0 0 8 14' aria-hidden='true'><path d='M1 1l6 6-6 6' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
@@ -2341,7 +2456,7 @@ window.Backend = (function () {
     var sos = m.status === "sos", isMe = m.id === "me";
     var html = "<li class='x-prow" + (sos ? " is-sos" : "") + "' data-id='" + esc(m.id) + "' tabindex='0' role='button' aria-label='" + esc((isMe ? "You" : (m.name || at(m))) + ", " + subText(m) + ". Show on map") + "'>" +
       face(m, "x-ava") +
-      "<span class='x-who'><b>" + esc(isMe ? "Me" : (m.name || at(m))) + "</b><span>" + (isMe ? esc((sos ? "SOS · " : "") + "My Location · " + ago(m.lastSeen)) : esc(subText(m)) + battHtml(m)) + "</span></span>" +
+      "<span class='x-who'><b>" + esc(isMe ? "Me" : (m.name || at(m))) + "</b><span>" + (isMe ? esc((sos ? "SOS · " : "") + "My Location · " + ago(m.lastSeen) + (Steps.today ? " · " + fmtN(Steps.today) + " steps" : "")) : esc(subText(m)) + battHtml(m)) + "</span></span>" +
       (!isMe && m.lat != null ? "<button class='x-dirbtn' type='button' data-dir='" + esc(m.id) + "' aria-label='Directions to " + esc(m.name || at(m)) + "'>" + ICON.dir + "</button>" : "") +
       ICON.chev + "</li>";
     if (sos && !isMe && m.lat != null) html += "<li class='x-prow__acts'><a class='x-btn x-btn--small x-btn--red' target='_blank' rel='noopener' href='https://www.google.com/maps?q=" + m.lat + "," + m.lng + "'>Open location</a>" +
@@ -2358,11 +2473,13 @@ window.Backend = (function () {
       "<span class='x-who'><b>" + esc(m.name || at(m)) + "</b><span>" + esc(at(m)) + " · " + ago(m.lastSeen) + " · " + dist(m) + "</span></span>" + badge + "</div></li>";
   }
   function renderMembers() {
-    var ms = B.members;
-    var meCard = { id: "me", username: B.me.username || "you", name: B.me.name || "Me", status: KT.isActive() ? "sos" : "safe", lastSeen: KT.last() ? KT.last().time.getTime() : null, lat: null };
+    var ms = B.members; ms.forEach(noteMove);
+    var meCard = { id: "me", avatar: B.me.avatar, username: B.me.username || "you", name: B.me.name || "Me", status: KT.isActive() ? "sos" : "safe", lastSeen: KT.last() ? KT.last().time.getTime() : null, lat: null };
     $("circleList").innerHTML = row(meCard) + (ms.length ? ms.map(row).join("") : "<li class='x-prow kt-empty' aria-disabled='true'><span class='x-who'><span>No one in your circle yet. Add someone below.</span></span></li>");
     $("emCircle").innerHTML = ms.length ? ms.map(function (m) { return card(m, false); }).join("") : "<li class='kt-empty'>No circle members to alert.</li>";
     $("circleCount").textContent = ms.length ? ms.length + " member" + (ms.length > 1 ? "s" : "") : "";
+    if (typeof pushWidget === "function" && window.KStore) try { pushWidget(); } catch (e) {}
+    try { renderStories(); } catch (e) {}
     renderCircleMap();
   }
   /* ---------- invites (consent) ---------- */
@@ -2528,12 +2645,14 @@ window.Backend = (function () {
     fillAv(d, m); return d;
   }
   function fillAv(d, m) {
-    var sos = m.status === "sos", key = [sos, m.name, m.username, m.photo || m.avatar_url || ""].join("|");
+    var sos = m.status === "sos", walk = isWalking(m), st = stepsOf(m), key = [sos, m.name, m.username, m.avatar || "", m.photo || m.avatar_url || "", walk, st].join("|");
+    d.classList.toggle("is-walk", walk && !sos);
     d.dataset.id = m.id;
     d.setAttribute("aria-label", (m.name || at(m)) + (sos ? ", SOS" : "") + ", " + ago(m.lastSeen) + ". Show details");
     if (d._k === key) return; d._k = key;
     d.classList.toggle("is-sos", sos);
-    d.innerHTML = "<span class='x-av__bubble'>" + face(m, "x-av__face") + "</span><span class='x-av__name'>" + esc(sos ? "SOS · " + first(m) : first(m)) + "</span>";
+    d.innerHTML = "<span class='x-av__bubble'>" + face(m, "x-av__face") + "</span><span class='x-av__name'>" + esc(sos ? "SOS · " + first(m) : first(m)) + "</span>" +
+      (walk && st && !sos ? "<span class='x-av__steps'>👣 " + esc(fmtN(st)) + "</span>" : "");
   }
   function selMarker(id) { Object.keys(cmarkers).forEach(function (k) { cmarkers[k].el.classList.toggle("is-sel", k === id); }); }
   function fitEveryone() {
@@ -2551,8 +2670,8 @@ window.Backend = (function () {
     withLoc.forEach(function (m) {
       seen[m.id] = 1;
       var z = m.status === "sos" ? 1500 : 10;
-      if (!cmarkers[m.id]) cmarkers[m.id] = cmap.marker(avEl(m), m.lat, m.lng, { anchor: "bottom", z: z });
-      else { cmarkers[m.id].move(m.lat, m.lng); fillAv(cmarkers[m.id].el, m); cmarkers[m.id].z(z); }
+      if (!cmarkers[m.id]) { cmarkers[m.id] = cmap.marker(avEl(m), m.lat, m.lng, { anchor: "bottom", z: z }); cmarkers[m.id].pos = [m.lat, m.lng]; }
+      else { glide(cmarkers[m.id], m.lat, m.lng); fillAv(cmarkers[m.id].el, m); cmarkers[m.id].z(z); }
     });
     Object.keys(cmarkers).forEach(function (id) { if (!seen[id]) { cmarkers[id].remove(); delete cmarkers[id]; } });
     if (floatMode === "person" && selId) selMarker(selId);
@@ -2781,6 +2900,188 @@ window.Backend = (function () {
   }
   KT.buzzAlert = buzzAlert;
 
+
+  /* ---------- movement: glide markers between updates, detect walking ---------- */
+  var trail = {};
+  function noteMove(m) {
+    if (m.lat == null) return;
+    var t = trail[m.id];
+    if (!t || t.lat !== m.lat || t.lng !== m.lng) {
+      var now = m.lastSeen || Date.now(), sp = 0;
+      if (t && now > t.t) { var R = 6371000, r = Math.PI / 180, dLat = (m.lat - t.lat) * r, dLng = (m.lng - t.lng) * r;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(t.lat * r) * Math.cos(m.lat * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        sp = 2 * R * Math.asin(Math.sqrt(a)) / ((now - t.t) / 1000); }
+      trail[m.id] = { lat: m.lat, lng: m.lng, t: now, sp: sp, st: m.steps, stAt: Date.now(), prevSt: t ? t.st : null };
+    } else if (m.steps != null && t.st !== m.steps) { t.prevSt = t.st; t.st = m.steps; t.stAt = Date.now(); }
+  }
+  /* walking: moving at a walking pace, or the step count went up in the last couple of minutes */
+  function isWalking(m) {
+    if (m.id === "me" || !m.lastSeen || Date.now() - m.lastSeen > 120000) return false;
+    var t = trail[m.id]; if (!t) return false;
+    if (t.sp > 0.5 && t.sp < 3.5) return true;
+    return t.prevSt != null && t.st > t.prevSt && Date.now() - t.stAt < 120000;
+  }
+  function glide(mk, la, ln) {
+    var from = mk.pos || [la, ln]; mk.pos = [la, ln];
+    if (mk.anim) cancelAnimationFrame(mk.anim);
+    if (Math.abs(from[0] - la) + Math.abs(from[1] - ln) < 1e-7 || Math.abs(from[0] - la) + Math.abs(from[1] - ln) > 0.05) { mk.move(la, ln); return; }
+    var t0 = performance.now(), dur = 1600;
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      mk.move(from[0] + (la - from[0]) * e, from[1] + (ln - from[1]) * e);
+      if (k < 1) mk.anim = requestAnimationFrame(step); else mk.anim = null;
+    })(t0);
+  }
+
+  /* ---------- steps: Android's step sensor (counts even with the app closed), motion sensor on the web ---------- */
+  var Steps = window.KSteps = {
+    today: 0, source: "",
+    dayStr: function () { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); },
+    st: function () { var s = window.KStore.get("steps", null); if (!s || s.day !== Steps.dayStr()) s = { day: Steps.dayStr(), base: null, today: 0, lastTotal: null }; return s; },
+    save: function (s) { window.KStore.set("steps", s); Steps.today = s.today; renderSteps(); },
+    onTotal: function (total) {
+      var s = Steps.st();
+      if (s.base == null) s.base = total - s.today;
+      else if (s.lastTotal != null && total < s.lastTotal) s.base = total - s.today; /* phone restarted */
+      s.lastTotal = total; s.today = Math.max(0, Math.round(total - s.base));
+      Steps.save(s);
+    },
+    add: function (n) { var s = Steps.st(); s.today += n; Steps.save(s); },
+    start: async function (fromTap) {
+      var P = window.Capacitor && window.Capacitor.Plugins;
+      if (B.isNative && P && P.Steps) {
+        try { await P.Steps.start(); Steps.source = "sensor"; window.KStore.set("stepsOn", true);
+          P.Steps.addListener("step", function (e) { Steps.onTotal(e.total); });
+          var g = await P.Steps.get(); if (g && g.total >= 0) Steps.onTotal(g.total);
+        } catch (e) { Steps.source = ""; if (fromTap) KT.toast(/denied/i.test(e.message || "") ? "Allow Physical activity for Kwata in Settings to count steps" : "This phone has no step sensor"); }
+        renderSteps(); return;
+      }
+      Steps.webMotion(fromTap);
+    },
+    /* web fallback: peak detection on the accelerometer while the page is open */
+    webMotion: function (fromTap) {
+      if (Steps.source === "motion" || !window.DeviceMotionEvent) { renderSteps(); return; }
+      var go = function () {
+        var avg = 9.8, lastStep = 0, above = false;
+        window.addEventListener("devicemotion", function (e) {
+          var a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+          var mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z); avg = avg * 0.9 + mag * 0.1;
+          var now = Date.now();
+          if (!above && mag - avg > 1.6 && now - lastStep > 300) { above = true; lastStep = now; Steps.add(1); }
+          else if (above && mag - avg < 0.4) above = false;
+        });
+        Steps.source = "motion"; window.KStore.set("stepsOn", true); renderSteps();
+      };
+      if (typeof DeviceMotionEvent.requestPermission === "function") { if (fromTap) DeviceMotionEvent.requestPermission().then(function (r) { if (r === "granted") go(); }).catch(function () {}); }
+      else go();
+    }
+  };
+  function renderSteps() {
+    var s = Steps.st(); Steps.today = s.today;
+    $("stepsNum").textContent = fmtN(s.today);
+    $("stepsLbl").textContent = "steps today" + (s.today >= 10000 ? " · goal reached 🎉" : " · goal 10,000");
+    $("stepsRing").setAttribute("stroke-dasharray", Math.min(100, s.today / 100) + " 100");
+    $("stepsStart").hidden = !!Steps.source; pushWidget(); try { renderStories(); } catch (e) {}
+    var a = avSrc(B.me.avatar);
+    $("todayAv").innerHTML = a ? "<img alt='' src='" + a + "' />" : "<span style='font-size:26px'>🙂</span>";
+  }
+  $("stepsStart").addEventListener("click", function () { Steps.start(true); });
+  $("todayPick").addEventListener("click", function () { KT.go("settings"); setTimeout(function () { var c = $("avCard"); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" }); }, 250); });
+
+  /* ---------- background tracking: an Android foreground service keeps sending your location ---------- */
+  var BG = { id: null };
+  async function startBackground() {
+    var P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation;
+    if (!B.isNative || !P || BG.id || !window.KStore.get("bgOn", true)) { renderBg(); return; }
+    try {
+      BG.id = await P.addWatcher({
+        backgroundTitle: "Kwata is keeping you safe",
+        backgroundMessage: "Sharing your location with your circle. Tap to open.",
+        requestPermissions: true, stale: false, distanceFilter: 10
+      }, function (loc, err) {
+        if (err) { if (err.code === "NOT_AUTHORIZED") KT.toast("Allow location for Kwata so your circle can see you"); return; }
+        if (!loc || !window.KTfix) return;
+        window.KTfix({ coords: { latitude: loc.latitude, longitude: loc.longitude, accuracy: loc.accuracy }, timestamp: loc.time || Date.now() });
+      });
+    } catch (e) { console.error("bg", e); BG.id = null; }
+    renderBg();
+  }
+  async function stopBackground() {
+    var P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation;
+    if (P && BG.id) { try { await P.removeWatcher({ id: BG.id }); } catch (e) {} }
+    BG.id = null; renderBg();
+  }
+  function renderBg() {
+    var t = $("bgToggle"); if (!t) return;
+    t.setAttribute("aria-checked", String(!!window.KStore.get("bgOn", true)));
+    $("bgState").textContent = !B.isNative ? "Works in the Android app. In a browser, tracking pauses when you leave the page." : BG.id ? "On. Your circle sees you move even when Kwata is closed." : window.KStore.get("bgOn", true) ? "Starting…" : "Off. Your location only updates while Kwata is open.";
+  }
+  $("bgToggle").addEventListener("click", function () {
+    var on = !window.KStore.get("bgOn", true); window.KStore.set("bgOn", on);
+    if (on) startBackground(); else stopBackground();
+    renderBg();
+  });
+  window.KTbackground = startBackground;
+
+  /* ---------- home-screen widget + its buttons ---------- */
+  var wTimer = null;
+  function pushWidget() {
+    var W = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetBridge; if (!B.isNative || !W) return;
+    clearTimeout(wTimer);
+    wTimer = setTimeout(function () {
+      var st = KT.isActive() ? "SOS active" : BG.id ? "Live" : "Paused";
+      W.update({ steps: Steps.today || 0, circle: B.members.length, status: st }).catch(function () {});
+    }, 1500);
+  }
+  window.KTbuzzAll = function () { if (!B.members.length) { KT.toast("Add someone to your circle first"); return; } buzz("all"); };
+  window.KTshowMap = function () { try { closeFloat(); KT.sheet("peek"); fitEveryone(); } catch (e) {} };
+
+  /* ---------- Instagram-style circle row: tap a face to find them on the map ---------- */
+  function renderStories() {
+    var el = $("stories"); if (!el) return;
+    var meA = avSrc(B.me.avatar), active = KT.isActive();
+    var h = "<button class='kt-story' type='button' role='listitem' data-story='me'><span class='kt-story__ring is-me" + (active ? " is-sos" : "") + "'><span class='kt-story__in'>" +
+      (meA ? "<img alt='' src='" + meA + "' />" : "<span style='font-size:26px'>🙂</span>") + "</span></span><span class='kt-story__name'>You</span>" +
+      "<span class='kt-story__sub'>" + (Steps.today ? fmtN(Steps.today) + " steps" : meA ? "My map" : "Pick avatar") + "</span></button>";
+    B.members.forEach(function (m) {
+      var a = avSrc(m.avatar), sos = m.status === "sos", walk = isWalking(m), fresh = m.lastSeen && Date.now() - m.lastSeen < 15 * 60000;
+      var cls = sos ? " is-sos" : walk ? " is-walk" : !fresh ? " is-old" : "";
+      h += "<button class='kt-story' type='button' role='listitem' data-story='" + esc(m.id) + "' aria-label='" + esc((m.name || at(m)) + ", " + subText(m)) + "'><span class='kt-story__ring" + cls + "'><span class='kt-story__in' style='" + (a ? "" : "background:" + grad(m)) + "'>" +
+        (a ? "<img alt='' src='" + a + "' />" : esc(initials(m))) + "</span>" + (fresh && !sos ? "<span class='kt-story__dot'></span>" : "") + "</span>" +
+        "<span class='kt-story__name'>" + esc(first(m)) + "</span><span class='kt-story__sub'>" + esc(sos ? "SOS" : walk ? "Walking" : ago(m.lastSeen)) + "</span></button>";
+    });
+    h += "<button class='kt-story' type='button' role='listitem' data-story='add'><span class='kt-story__ring is-add'><span class='kt-story__in'>+</span></span><span class='kt-story__name'>Add</span><span class='kt-story__sub'>&nbsp;</span></button>";
+    el.innerHTML = h;
+  }
+  $("stories").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-story]"); if (!b) return;
+    var id = b.dataset.story;
+    if (id === "me") { if (!B.me.avatar) $("todayPick").click(); else { var p = KT.last(); var cm = KT.map(); if (p && cm) { KT.unfollow && KT.unfollow(); cm.fit([[p.lat, p.lng]], KT.mapPad(), 17); KT.sheet("peek"); } } return; }
+    if (id === "add") { var q = $("searchQ"); if (q) { q.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(function () { q.focus(); }, 300); } return; }
+    openPerson(id, true);
+  });
+
+  /* ---------- avatar picker ---------- */
+  function renderAvPick() {
+    $("avPick").innerHTML = AVATARS.map(function (id) {
+      return "<button type='button' data-av='" + id + "' aria-pressed='" + (B.me.avatar === id) + "' aria-label='" + id + "'><img alt='' src='" + avSrc(id) + "' loading='lazy' /></button>";
+    }).join("");
+  }
+  $("avPick").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-av]"); if (!b) return;
+    try { await B.setAvatar(b.dataset.av); renderAvPick(); renderSteps(); renderMembers(); meAvatar(); KT.toast("Avatar saved"); }
+    catch (er) { KT.toast(er.message || "Could not save avatar"); }
+  });
+  /* my own dot on the map shows my avatar too */
+  function meAvatar() {
+    var a = avSrc(B.me.avatar);
+    document.querySelectorAll(".x-medot").forEach(function (d) {
+      if (a) { d.classList.add("has-av"); if (!d.firstChild || d.firstChild.getAttribute("src") !== a) d.innerHTML = "<img alt='' src='" + a + "' />"; }
+      else { d.classList.remove("has-av"); d.innerHTML = ""; }
+    });
+  }
+  setInterval(meAvatar, 3000);
+
   /* ---------- account gate ---------- */
   var amode = "signin", dismissed = false;
   function aMsg(t, err) { var m = $("authMsg"); m.textContent = t || ""; m.classList.toggle("is-err", !!err); }
@@ -2867,6 +3168,8 @@ window.Backend = (function () {
       if (B.user && B.user.is_anonymous && !dismissed) { if ($("authGate").hidden || amode !== "upgrade") showGate("upgrade"); }
       else if (B.user && !B.user.is_anonymous) hideGate();
       checkInvite();
+      B.registerPush().catch(function (e) { console.error(e); });
+      startBackground();
     }
   }
 
@@ -2875,10 +3178,10 @@ window.Backend = (function () {
     if (ev.type === "members") renderMembers();
     else if (ev.type === "invites") renderInvites();
     else if (ev.type === "invite") { vib([80, 60, 80]); KT.toast("📩 " + at(ev.from) + " invited you to their circle — see Invites"); }
-    else if (ev.type === "me") renderMe();
+    else if (ev.type === "me") { renderMe(); renderAvPick(); renderSteps(); meAvatar(); }
     else if (ev.type === "status") renderMode();
     else if (ev.type === "error") { renderMode(); KT.toast(ev.message); }
-    else if (ev.type === "buzz") { buzzAlert(); KT.toast("❤️ " + at(ev.from) + " buzzed you"); }
+    else if (ev.type === "buzz") { buzzAlert(); KT.toast("I love you ❤️ " + (ev.from && ev.from.name ? ev.from.name : at(ev.from)) + " buzzed you"); }
     else if (ev.type === "auth") onAuthEv(ev);
     else if (ev.type === "sos") {
       if (ev.active) { vib([600, 200, 600, 200, 600]); KT.toast("🚨 " + at(ev.member) + " sent an SOS"); }
@@ -2896,7 +3199,7 @@ window.Backend = (function () {
     var now = Date.now();
     if (!KT.isActive() && now - lastShare < 15000) { renderMembers(); return; }
     lastShare = now;
-    B.shareLocation({ lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null });
+    B.shareLocation({ lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null, steps: Steps.source ? Steps.today : null, stepsDay: Steps.dayStr() });
     renderMembers();
   });
   document.addEventListener("kt:sos", function (e) {
@@ -2909,7 +3212,8 @@ window.Backend = (function () {
   setInterval(renderMembers, 30000);
 
   $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", a defence technology company under Motswana Intelligence, founded by Thuto Leseane.";
-  renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount();
+  renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount(); renderAvPick(); renderSteps();
+  if (B.isNative || window.KStore.get("stepsOn", false)) Steps.start(false);
   B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
 })();
 

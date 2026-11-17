@@ -9,4 +9,5 @@
     <string name="widget_sos_desc">Kwata SOS: one tap opens the emergency countdown</string>
     <string name="shortcut_sos_short">SOS</string>
     <string name="shortcut_sos_long">Send SOS to my circle</string>
+    <string name="widget_circle_desc">Kwata: steps, your circle, and SOS / Buzz in one tap</string>
 </resources>
