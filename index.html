@@ -437,6 +437,25 @@
       .kt-pause.is-paused { background: color-mix(in srgb, #ff9f0a 12%, var(--fill-primary-on, #fff)); }
       .kt-bgfix { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--stroke-primary, #ddd); }
       .kt-bgfix[hidden], .kt-pause__opts[hidden] { display: none; }
+      .kt-lock { position: fixed; inset: 0; z-index: 105; display: grid; place-items: center; padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px); background: radial-gradient(120% 80% at 50% 0%, #3a0d0d, #0b0b0f 70%); color: #fff; text-align: center; }
+      .kt-lock[hidden] { display: none; }
+      .kt-lock__in { max-width: 360px; display: grid; gap: 14px; justify-items: center; }
+      .kt-lock__shield { width: 84px; height: 84px; color: #ff453a; filter: drop-shadow(0 0 24px rgb(255 69 58 / 0.55)); animation: kt-pulse 1.6s ease-in-out infinite; }
+      .kt-lock h2 { margin: 0; font: 800 26px/1.15 var(--sans); letter-spacing: -0.02em; }
+      .kt-lock p { margin: 0; color: rgb(255 255 255 / 0.75); font-size: 15px; line-height: 1.45; }
+      .kt-lock .x-btn { background: rgb(255 255 255 / 0.12); color: #fff; border: 1px solid rgb(255 255 255 / 0.2); }
+      .kt-lock .kt-lock__call { background: #30d158; color: #04210f; border: 0; font-weight: 700; }
+      .kt-alert { position: fixed; left: 12px; right: 12px; top: calc(env(safe-area-inset-top) + 12px); z-index: 104; max-width: 460px; margin: 0 auto; padding: 16px; border-radius: 22px; background: var(--fill-primary-on, #fff); box-shadow: 0 18px 50px rgb(0 0 0 / 0.35), 0 0 0 2px #ff453a; display: grid; gap: 10px; animation: kt-drop 260ms cubic-bezier(.2,.9,.3,1.2); }
+      .kt-alert[hidden] { display: none; }
+      .kt-alert h3 { margin: 0; font: 800 18px/1.2 var(--sans); color: #ff3b30; }
+      .kt-alert p { margin: 0; font-size: 14.5px; line-height: 1.4; }
+      .kt-alert img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; background: #111; }
+      .kt-alert .x-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      @keyframes kt-drop { from { transform: translateY(-30px); opacity: 0; } }
+      .kt-stolen { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #ff3b30; color: #fff; font: 800 11px/1.4 var(--sans); letter-spacing: .04em; }
+      .x-float__theft { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+      .x-float__theft .kt-stolen { align-self: center; }
+      #myTrail { margin-top: 10px; }
       .kt-switchrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
       .kt-switch { width: 51px; height: 31px; border-radius: 999px; border: 0; padding: 2px; background: var(--fill-tertiary, #ddd); cursor: pointer; transition: background 200ms; }
       .kt-switch i { display: block; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.25); transition: transform 260ms var(--x-spring, ease); }
@@ -730,6 +749,18 @@
               <button class="x-btn x-btn--small" type="button" id="bgBattery">Stop battery saver killing it</button></div>
             </div>
           </div>
+          <div class="x-card" id="theftCard">
+            <div class="kt-switchrow"><div><h2 style="margin:0">Theft protection</h2><p style="margin:4px 0 0">A wrong PIN, or someone trying to stop sharing, snaps a front-camera photo and sends it to your circle with your location and battery.</p></div>
+            <button class="kt-switch" id="theftToggle" type="button" role="switch" aria-checked="true" aria-label="Theft protection"><i></i></button></div>
+            <p class="fineprint" id="simState"></p>
+            <div class="x-actions">
+              <button class="x-btn x-btn--small" type="button" id="simAllow" hidden>Turn on SIM-change alerts</button>
+              <button class="x-btn x-btn--small" type="button" id="theftTest">Send a test alert</button>
+              <button class="x-btn x-btn--small x-btn--red" type="button" id="markMine">My phone was stolen</button>
+            </div>
+            <p class="fineprint" id="markMineHint">Use this from another phone or the web: sign in to Kwata there and tap it. Your stolen phone then logs its location every minute.</p>
+            <div id="myTrail" hidden></div>
+          </div>
           <div class="x-card" id="avCard">
             <h2>Your 3D avatar</h2>
             <p>Your circle sees this on the map. It bobs along when you're walking.</p>
@@ -782,6 +813,17 @@
     </div>
 
     <!-- iOS passcode keypad -->
+    <div class="kt-lock" id="theftLock" role="dialog" aria-modal="true" aria-labelledby="lockTitle" hidden>
+      <div class="kt-lock__in">
+        <svg class="kt-lock__shield" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.6 8 11 4.6-1.4 8-6 8-11V5l-8-3zm0 6a2 2 0 0 1 2 2v1h.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5h.5v-1a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v1h2v-1a1 1 0 0 0-1-1z"/></svg>
+        <h2 id="lockTitle">This phone is tracked by Kwata</h2>
+        <p>Its location, battery and a photo of whoever is holding it have been sent to the owner's circle.</p>
+        <p class="kt-lock__found" id="lockFound"></p>
+        <a class="x-btn x-btn--wide kt-lock__call" id="lockCall" hidden>Call the owner</a>
+        <button class="x-btn x-btn--wide" type="button" id="lockOwner">I'm the owner</button>
+      </div>
+    </div>
+    <div class="kt-alert" id="theftAlert" role="alertdialog" aria-modal="true" aria-labelledby="taTitle" hidden></div>
     <div class="x-pin" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle" hidden>
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>
       <h2 id="pinTitle">Enter Passcode</h2>
@@ -1538,7 +1580,7 @@ window.Backend = (function () {
       var cm = await Sb.client.from("circle_members").select("member_id").eq("owner_id", Sb.uid);
       if (cm.error) throw cm.error;
       var ids = (cm.data || []).map(function (r) { return r.member_id; });
-      if (!ids.length) { B.members = []; B.emit({ type: "members" }); return; }
+      if (!ids.length) { B.members = []; try { var st0 = await Sb.client.from("stolen").select("*").eq("user_id", Sb.uid); (st0.data || []).forEach(function (r) { B.stolen[r.user_id] = r; }); B.emit({ type: "stolen" }); } catch (e) {} B.emit({ type: "members" }); return; }
       var pr = await Sb.client.from("profiles").select("id,username,name,phone,avatar").in("id", ids);
       var lo = await Sb.client.from("locations").select("*").in("user_id", ids);
       var so = await Sb.client.from("sos_events").select("*").in("user_id", ids).eq("active", true);
@@ -1549,6 +1591,7 @@ window.Backend = (function () {
         return { id: p.id, username: p.username, name: p.name, phone: p.phone, avatar: p.avatar || "", steps: l && l.steps != null ? l.steps : null, stepsDay: l ? l.steps_day : null, lat: l ? l.lat : null, lng: l ? l.lng : null,
           lastSeen: l ? Date.parse(l.updated_at) : null, battery: l ? l.battery : null, status: sos[p.id] ? "sos" : (l && l.status) || "safe", alerted: B.alerted };
       });
+      try { var st = await Sb.client.from("stolen").select("*").in("user_id", ids.concat([Sb.uid])); (st.data || []).forEach(function (r) { B.stolen[r.user_id] = r; }); B.emit({ type: "stolen" }); } catch (e) {}
       /* remembered on the phone so an SOS can still text them with no data */
       window.KStore.set("circlePhones", B.members.filter(function (m) { return m.phone; }).map(function (m) { return { name: m.name || m.username, phone: m.phone }; }));
       B.emit({ type: "members" });
@@ -1578,6 +1621,9 @@ window.Backend = (function () {
           B.emit({ type: "members" });
         })
         .on("postgres_changes", { event: "*", schema: "public", table: "circle_members" }, function () { Sb.loadCircle().catch(function () {}); })
+        /* theft alerts and stolen flags from me and my circle (RLS decides who sees what) */
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "theft_events" }, function (pl) { if (pl.new) B.emit({ type: "theft", ev: pl.new }); })
+        .on("postgres_changes", { event: "*", schema: "public", table: "stolen" }, function (pl) { var r = pl.new; if (r && r.user_id) { B.stolen[r.user_id] = r; B.emit({ type: "stolen", row: r }); B.emit({ type: "members" }); } })
         /* incoming invites, live */
         .on("postgres_changes", { event: "*", schema: "public", table: "circle_invites", filter: "to_id=eq." + Sb.uid }, async function (pl) {
           try { await Sb.loadInvites(); } catch (e) {}
@@ -1630,6 +1676,27 @@ window.Backend = (function () {
     }
   };
   B.retry = function () { retryN = 0; return B.start(); };
+
+  /* ---------- theft protection ---------- */
+  B.stolen = {};
+  B.uid = function () { return Sb.uid; };
+  B.theftEvent = async function (kind, loc, photo, detail) {
+    live();
+    var path = null;
+    if (photo) {
+      path = Sb.uid + "/" + Date.now() + ".jpg";
+      var up = await Sb.client.storage.from("theft-photos").upload(path, photo, { contentType: "image/jpeg", upsert: false });
+      if (up.error) { console.error(up.error); path = null; }
+    }
+    var r = await Sb.client.from("theft_events").insert({ user_id: Sb.uid, kind: kind, lat: loc ? loc.lat : null, lng: loc ? loc.lng : null, battery: loc ? loc.battery : null, photo_path: path, detail: detail || null });
+    if (r.error) throw new Error(r.error.message);
+  };
+  B.markStolen = async function (target, device) { live(); var r = await Sb.client.rpc("mark_stolen", { target: target || null, device: device || null }); if (r.error) throw new Error(r.error.message); await Sb.loadCircle(); return r.data; };
+  B.clearStolen = async function (target) { live(); var r = await Sb.client.rpc("clear_stolen", { target: target || null }); if (r.error) throw new Error(r.error.message); await Sb.loadCircle(); };
+  B.trailPoint = async function (loc) { if (!Sb.uid) return; try { await Sb.client.from("trail").insert({ user_id: Sb.uid, lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy, battery: loc.battery }); } catch (e) {} };
+  B.photoUrl = async function (path) { if (!path || !Sb.client) return null; var r = await Sb.client.storage.from("theft-photos").createSignedUrl(path, 3600); return r.data ? r.data.signedUrl : null; };
+  B.recentTheft = async function (uid) { live(); var r = await Sb.client.from("theft_events").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(5); return r.data || []; };
+  B.trailLink = function (token) { return PUBLIC_URL + "trail.html?t=" + token; };
   window.addEventListener("online", function () { if (B.offline) B.retry(); });
   /* ---------- accounts: Google + email/password ---------- */
   function need() { if (B.mode !== "supabase" || !Sb.client) throw new Error("Can't reach the Kwata server. Check your connection."); return Sb.client.auth; }
@@ -2293,9 +2360,9 @@ window.Backend = (function () {
   /* ---------- PIN keypad ---------- */
   var entry = "";
   function drawDots() { document.querySelectorAll("#pinDots span").forEach(function (d, i) { d.classList.toggle("is-on", i < entry.length); }); }
-  var padCb = null, padFail = null;
-  function openPad(cb, sub, onFail) {
-    padCb = typeof cb === "function" ? cb : null; padFail = typeof onFail === "function" ? onFail : null;
+  var padCb = null, padWhy = null;
+  function openPad(cb, sub, why) {
+    padCb = typeof cb === "function" ? cb : null; padWhy = typeof why === "string" ? why : null;
     document.querySelector("#pinModal .x-pin__sub").textContent = sub || "Your 4-digit PIN stops tracking";
     entry = ""; drawDots(); $("pinErr").textContent = ""; $("pinModal").hidden = false; var k = document.querySelector("#keys [data-d='1']"); if (k) k.focus();
   }
@@ -2312,7 +2379,7 @@ window.Backend = (function () {
     if (entry.length === 4) {
       if (entry === S.pin) { var cb = padCb; padCb = null; closePad(); if (cb) cb(); else stopEmergency(); }
       else {
-        if (padFail) try { padFail(); } catch (er) {}
+        try { document.dispatchEvent(new CustomEvent("kt:badpin", { detail: { why: padWhy || "stop" } })); } catch (er) {}
         $("pinErr").textContent = "Wrong PIN — try again"; var dots = $("pinDots");
         dots.classList.remove("is-shake"); void dots.offsetWidth; dots.classList.add("is-shake");
         if (navigator.vibrate) try { navigator.vibrate(300); } catch (er) {}
@@ -2417,7 +2484,7 @@ window.Backend = (function () {
   function fmtN(n) { try { return Number(n).toLocaleString(); } catch (e) { return String(n); } }
   function isStale(m) { return m.status !== "sos" && (!m.lastSeen || Date.now() - m.lastSeen > 10 * 60000); }
   function seenText(m) { return m.status === "paused" ? "Paused sharing · last seen " + ago(m.lastSeen) : isStale(m) ? "Last seen " + ago(m.lastSeen) : ago(m.lastSeen); }
-  function subText(m) { var st = stepsOf(m); return (m.status === "sos" ? "SOS · " : "") + (isWalking(m) && !isStale(m) ? "Walking · " : "") + seenText(m) + (m.lat != null ? " · " + dist(m) : " · no location yet") + (st && !isStale(m) ? " · " + fmtN(st) + " steps" : ""); }
+  function subText(m) { var st = stepsOf(m); return (B.stolen[m.id] && B.stolen[m.id].active ? "STOLEN · " : "") + (m.status === "sos" ? "SOS · " : "") + (isWalking(m) && !isStale(m) ? "Walking · " : "") + seenText(m) + (m.lat != null ? " · " + dist(m) : " · no location yet") + (st && !isStale(m) ? " · " + fmtN(st) + " steps" : ""); }
   var ICON = {
     dir: "<svg viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d='M21.7 11.3l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5z'/></svg>",
     chev: "<svg class='x-chev' viewBox='0 0 8 14' aria-hidden='true'><path d='M1 1l6 6-6 6' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
@@ -2679,7 +2746,13 @@ window.Backend = (function () {
       (m.lat != null ? "<button class='x-act x-act--primary' type='button' data-act='dir'>" + ICON.dir + "Directions</button>" : "") +
       "<button class='x-act' type='button' data-act='buzz'>" + ICON.heart + "Buzz</button>" +
       (m.phone ? "<a class='x-act' href='tel:" + esc(m.phone) + "'>" + ICON.phone + "Call</a>" : "") +
-      "<button class='x-act x-act--red' type='button' data-act='remove'>" + ICON.remove + "Remove</button></div>";
+      "<button class='x-act x-act--red' type='button' data-act='remove'>" + ICON.remove + "Remove</button></div>" +
+      (function () {
+        var sr = B.stolen[id];
+        if (sr && sr.active) return "<div class='x-float__theft'><span class='kt-stolen'>STOLEN</span><a class='x-btn x-btn--small x-btn--primary' target='_blank' rel='noopener' href='" + esc(B.trailLink(sr.token)) + "'>Police timeline</a>" +
+          "<button class='x-btn x-btn--small' type='button' data-share-trail='" + esc(sr.token) + "'>Share</button><button class='x-btn x-btn--small' type='button' data-act='recovered'>Recovered</button></div>";
+        return "<div class='x-float__theft'><button class='x-btn x-btn--small' type='button' data-act='stolen'>Mark phone stolen</button></div>";
+      })();
     f.hidden = false; renderPersonSub(); selMarker(id);
     KT.sheet("peek");
     if (fly && m.lat != null) { var cmap = KT.map(); if (cmap) { KT.unfollow(); cmap.fit([[m.lat, m.lng]], KT.mapPad(), 16); } }
@@ -2696,6 +2769,8 @@ window.Backend = (function () {
     else if (a === "dir") startDirections(selId);
     else if (a === "buzz") buzz(selId);
     else if (a === "remove") removeMember(selId);
+    else if (a === "stolen") { if (confirm("Mark " + ((B.member(selId) || {}).name || "their") + "'s phone as stolen? Their circle is alerted and the phone logs its location every minute.")) B.markStolen(selId).then(function () { KT.toast("Marked stolen"); }).catch(function (er) { KT.toast(er.message); }); }
+    else if (a === "recovered") { B.clearStolen(selId).then(function () { KT.toast("Marked recovered"); }).catch(function (er) { KT.toast(er.message); }); }
     else if (a === "end") endDirections();
     else if (a === "mode") { Dir.route = null; Dir.mode = b.dataset.mode === "walking" ? "walking" : "driving"; window.KStore.set("dirMode", Dir.mode); fetchRoute(true); }
     else if (a === "retry") fetchRoute(true);
@@ -2994,9 +3069,9 @@ window.Backend = (function () {
     $("bgState").textContent = !B.isNative ? "Works in the Android app. In a browser, tracking pauses when you leave the page." : BG.id ? "On. Your circle sees you move even when Kwata is closed." : window.KStore.get("bgOn", true) ? "Starting…" : "Off. Your location only updates while Kwata is open.";
   }
   $("bgToggle").addEventListener("click", function () {
-    var on = !window.KStore.get("bgOn", true); window.KStore.set("bgOn", on);
-    if (on) startBackground(); else stopBackground();
-    renderBg();
+    var on = !window.KStore.get("bgOn", true);
+    if (on) { window.KStore.set("bgOn", true); startBackground(); renderBg(); return; }
+    KT.askPin(function () { window.KStore.set("bgOn", false); stopBackground(); renderBg(); }, "Enter your PIN to stop background tracking", "bg");
   });
   window.KTbackground = startBackground;
   /* Android: "Allow all the time" + battery-optimisation exemption keep tracking alive when the phone sleeps */
@@ -3180,6 +3255,8 @@ window.Backend = (function () {
       if (ev.active) { vib([600, 200, 600, 200, 600]); KT.toast("🚨 " + at(ev.member) + " sent an SOS"); }
       else KT.toast(at(ev.member) + " is safe now");
     }
+    else if (ev.type === "theft") { showTheftAlert(ev.ev); }
+    else if (ev.type === "stolen") { syncStolenMode(); if (floatMode === "person") openPerson(selId, false); }
     else if (ev.type === "alerted" && ev.active) { KT.toast(B.members.length ? "Circle alerted (" + B.members.length + ")" : "No circle members to alert"); }
   });
 
@@ -3201,10 +3278,191 @@ window.Backend = (function () {
     KT.askPin(function () {
       window.KStore.set("pausedUntil", mins ? Date.now() + mins * 60000 : -1);
       sendPausedRow(); renderPause(); KT.toast("Sharing paused");
-    }, "Enter your PIN to pause sharing", function () { document.dispatchEvent(new CustomEvent("kt:badpin", { detail: { why: "pause" } })); });
+    }, "Enter your PIN to pause sharing", "pause");
   });
   $("resumeBtn").addEventListener("click", function () { window.KStore.set("pausedUntil", null); B.me.status = "safe"; lastShare = 0; renderPause(); document.dispatchEvent(new CustomEvent("kt:pos")); KT.toast("Sharing is back on"); });
   setInterval(function () { var was = $("pauseCard").classList.contains("is-paused"); renderPause(); if (was && pausedUntil() == null) { B.me.status = "safe"; lastShare = 0; document.dispatchEvent(new CustomEvent("kt:pos")); } }, 30000);
+
+
+  /* ================= THEFT PROTECTION =================
+     wrong PIN x2 (SOS stop) or 1 wrong PIN on pause / stop-tracking -> front-camera photo + location + battery to the circle,
+     and the "tracked by Kwata" lock screen. SIM changes alert the circle. A phone marked stolen logs its location every minute. */
+  var Theft = { bad: [], last: {}, trailT: null, deviceId: window.KStore.get("deviceId", null) };
+  if (!Theft.deviceId) { Theft.deviceId = "d" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); window.KStore.set("deviceId", Theft.deviceId); }
+  function theftOn() { return window.KStore.get("theftOn", true) !== false; }
+  function locNow() { var p = KT.last(); return p ? { lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null } : (batt ? { battery: Math.round(batt.level * 100) } : null); }
+  /* a silent front-camera frame (the WebView asks for camera permission the first time) */
+  function snapPhoto() {
+    return new Promise(function (resolve) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return resolve(null);
+      var done = false, stream = null, v = document.createElement("video");
+      var finish = function (blob) { if (done) return; done = true; try { stream && stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} resolve(blob); };
+      setTimeout(function () { finish(null); }, 8000);
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 960 }, height: { ideal: 1280 } }, audio: false }).then(function (st) {
+        stream = st; v.muted = true; v.playsInline = true; v.srcObject = st;
+        v.play().catch(function () {});
+        setTimeout(function () {
+          try {
+            var w = v.videoWidth || 640, h = v.videoHeight || 480, k = Math.min(1, 960 / Math.max(w, h));
+            var c = document.createElement("canvas"); c.width = Math.round(w * k); c.height = Math.round(h * k);
+            c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+            c.toBlob(function (b) { finish(b); }, "image/jpeg", 0.7);
+          } catch (e) { finish(null); }
+        }, 900);
+      }).catch(function () { finish(null); });
+    });
+  }
+  function queueTheft(item) { var q = window.KStore.get("theftQueue", []) || []; q.push(item); window.KStore.set("theftQueue", q.slice(-20)); }
+  async function flushTheft() {
+    var q = window.KStore.get("theftQueue", []) || []; if (!q.length || B.offline) return;
+    window.KStore.set("theftQueue", []);
+    for (var i = 0; i < q.length; i++) { try { await B.theftEvent(q[i].kind, q[i].loc, null, Object.assign({ queued_at: q[i].at }, q[i].detail || {})); } catch (e) { queueTheft(q[i]); } }
+  }
+  window.addEventListener("online", function () { setTimeout(flushTheft, 4000); });
+  async function triggerTheft(kind, detail, opts) {
+    if (!theftOn() && kind !== "test") return;
+    var now = Date.now(); if (Theft.last[kind] && now - Theft.last[kind] < 90000) return; Theft.last[kind] = now;
+    var photo = (kind === "wrong_pin" || kind === "stop_attempt" || kind === "test") ? await snapPhoto() : null;
+    var loc = locNow();
+    if (!(opts && opts.noLock) && kind !== "test" && kind !== "sim_change") showLock();
+    try { await B.theftEvent(kind, loc, photo, detail); if (kind === "test") KT.toast(photo ? "Test alert sent to your circle, with a photo" : "Test alert sent to your circle (no camera access)"); }
+    catch (e) {
+      queueTheft({ kind: kind, loc: loc, detail: detail, at: new Date().toISOString() });
+      if (kind !== "test") { var nums = sosNumbers(); var N = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KwataNative;
+        if (nums.length && B.isNative && N) N.sendSms({ numbers: nums, text: "Kwata theft alert: " + (kind === "sim_change" ? "the SIM was changed in " : "someone entered a wrong PIN on ") + (B.me.name || "my") + " phone. " + KT.sosText() }).catch(function () {}); }
+      else KT.toast("Couldn't send the test: " + (e.message || e));
+    }
+  }
+  document.addEventListener("kt:badpin", function (e) {
+    var why = e.detail && e.detail.why;
+    if (why === "pause" || why === "bg") { triggerTheft("stop_attempt", { via: why }); return; }
+    if (why === "owner") return;
+    var now = Date.now(); Theft.bad = Theft.bad.filter(function (t) { return now - t < 300000; }); Theft.bad.push(now);
+    if (Theft.bad.length >= 2) { Theft.bad = []; triggerTheft("wrong_pin", { tries: 2 }); }
+  });
+
+  /* ---------- the lock screen ---------- */
+  function showLock() {
+    var lk = $("theftLock"); var ph = B.me.phone || "";
+    $("lockFound").textContent = "Found this phone? Please call its owner" + (B.me.name ? ", " + B.me.name : "") + (ph ? ", on " + ph + "." : ", or hand it in at the nearest police station.");
+    var call = $("lockCall"); call.hidden = !ph; if (ph) call.href = "tel:" + ph;
+    lk.hidden = false; window.KStore.set("locked", true);
+  }
+  function hideLock() { $("theftLock").hidden = true; window.KStore.set("locked", false); }
+  $("lockOwner").addEventListener("click", function () {
+    KT.askPin(async function () {
+      hideLock(); Theft.bad = [];
+      var mine = B.stolen[B.uid()];
+      if (mine && mine.active && confirm("Mark your phone as recovered? Your circle will be told.")) { try { await B.clearStolen(); KT.toast("Marked recovered"); } catch (e) { KT.toast(e.message); } }
+    }, "Owner? Enter your PIN", "owner");
+  });
+  if (window.KStore.get("locked", false)) showLock();
+
+  /* ---------- stolen mode on this phone: a location every minute ---------- */
+  function stolenHere() { var r = B.stolen[B.uid()]; return !!(r && r.active && r.marked_device !== Theft.deviceId); }
+  function trailTick() {
+    var p = KT.last();
+    var push = function (pp) { B.trailPoint({ lat: pp.lat, lng: pp.lng, accuracy: pp.acc, battery: batt ? Math.round(batt.level * 100) : null }); };
+    try { navigator.geolocation.getCurrentPosition(function (g) { push({ lat: g.coords.latitude, lng: g.coords.longitude, acc: g.coords.accuracy }); }, function () { if (p) push(p); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }); }
+    catch (e) { if (p) push(p); }
+  }
+  function syncStolenMode() {
+    var on = stolenHere();
+    if (on && !Theft.trailT) {
+      window.KStore.set("pausedUntil", null); renderPause();
+      if (!window.KStore.get("bgOn", true)) { window.KStore.set("bgOn", true); }
+      try { window.KTbackground && window.KTbackground(); } catch (e) {}
+      trailTick(); Theft.trailT = setInterval(trailTick, 60000); showLock();
+    } else if (!on && Theft.trailT) { clearInterval(Theft.trailT); Theft.trailT = null; }
+    renderTheftCard();
+  }
+
+  /* ---------- SIM change ---------- */
+  var simAt = 0;
+  async function checkSim(force) {
+    var N = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KwataNative;
+    if (!B.isNative || !N || !N.simInfo) return;
+    if (!force && Date.now() - simAt < 600000) return; simAt = Date.now();
+    try {
+      var r = await N.simInfo();
+      if (r.state === "UNKNOWN" || r.state === "NOT_READY") return;
+      var fp = [r.state, r.operator || "", (r.subs || []).join("+")].join("|");
+      var old = window.KStore.get("simFp", null);
+      window.KStore.set("simFp", fp);
+      $("simState").textContent = "SIM: " + (r.state === "ABSENT" ? "no SIM inserted" : (r.operatorName || r.operator || "inserted")) + (r.subs ? " · SIM-change alerts on" : " · basic SIM check (network changes only)");
+      $("simAllow").hidden = !!r.subs;
+      if (old && old !== fp && old.split("|")[0] !== "UNKNOWN") triggerTheft("sim_change", { before: old, after: fp, operator: r.operatorName || r.operator || null }, { noLock: true });
+    } catch (e) {}
+  }
+  $("simAllow").addEventListener("click", function () { var N = window.Capacitor.Plugins.KwataNative; N.requestPhone().then(function () { checkSim(true); }).catch(function () { KT.toast("Without phone permission Kwata can only spot a SIM from a different network"); }); });
+  document.addEventListener("kt:pos", function () { checkSim(false); if (stolenHere() && !Theft.trailT) syncStolenMode(); });
+
+  /* ---------- settings card ---------- */
+  function renderTheftCard() {
+    $("theftToggle").setAttribute("aria-checked", String(theftOn()));
+    if (!B.isNative) $("simState").textContent = "SIM-change alerts work in the Android app.";
+    var mine = B.stolen[B.uid()];
+    var box = $("myTrail");
+    if (mine && mine.active) {
+      $("markMine").textContent = "Mark my phone recovered"; $("markMine").classList.remove("x-btn--red");
+      box.hidden = false;
+      box.innerHTML = "<p><span class='kt-stolen'>STOLEN</span> since " + esc(new Date(mine.marked_at).toLocaleString()) + ". Your phone logs its location every minute while it's on.</p>" +
+        "<div class='x-actions'><a class='x-btn x-btn--small x-btn--primary' target='_blank' rel='noopener' href='" + esc(B.trailLink(mine.token)) + "'>Open police timeline</a>" +
+        "<button class='x-btn x-btn--small' type='button' data-share-trail='" + esc(mine.token) + "'>Share link</button></div>";
+    } else { $("markMine").textContent = "My phone was stolen"; $("markMine").classList.add("x-btn--red"); box.hidden = true; box.innerHTML = ""; }
+  }
+  $("theftToggle").addEventListener("click", function () {
+    if (theftOn()) KT.askPin(function () { window.KStore.set("theftOn", false); renderTheftCard(); }, "Enter your PIN to turn off theft protection", "bg");
+    else { window.KStore.set("theftOn", true); renderTheftCard(); }
+  });
+  $("theftTest").addEventListener("click", function () { delete Theft.last.test; triggerTheft("test", { test: true }); });
+  $("markMine").addEventListener("click", async function () {
+    var mine = B.stolen[B.uid()];
+    try {
+      if (mine && mine.active) { await B.clearStolen(); KT.toast("Marked recovered. Your circle has been told."); }
+      else {
+        if (!confirm("Mark your phone as stolen? Your circle is alerted, and the stolen phone logs its location every minute. Only do this from another phone or the web.")) return;
+        await B.markStolen(null, Theft.deviceId); KT.toast("Marked stolen. The trail link is in Settings.");
+      }
+    } catch (e) { KT.toast(e.message || "Couldn't update"); }
+    renderTheftCard();
+  });
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-share-trail]"); if (!b) return;
+    var url = B.trailLink(b.dataset.shareTrail), text = "Kwata stolen-phone timeline (live location log): " + url;
+    if (navigator.share) navigator.share({ title: "Stolen phone timeline", text: text, url: url }).catch(function () {}); else KT.copy(url);
+  });
+
+  /* ---------- circle side: the alert card ---------- */
+  var KIND_TXT = { wrong_pin: "Wrong PIN entered on WHO's phone. It may be stolen.", stop_attempt: "Someone tried to stop location sharing on WHO's phone.", sim_change: "The SIM card in WHO's phone was changed.",
+    marked_stolen: "WHO's phone was marked stolen. It now logs its location every minute.", recovered: "WHO's phone was marked recovered.", test: "Test theft alert from WHO. Everything works." };
+  async function showTheftAlert(ev) {
+    var isMe = ev.user_id === B.uid(), m = isMe ? { id: B.uid(), name: "Your", phone: B.me.phone } : B.member(ev.user_id);
+    if (!m) return;
+    if (isMe && (ev.kind === "wrong_pin" || ev.kind === "stop_attempt") && !$("theftLock").hidden) return;
+    var who = isMe ? "your" : (m.name || at(m));
+    var txt = (KIND_TXT[ev.kind] || "Theft alert for WHO.").replace("WHO's", isMe ? "your" : who + "'s").replace("WHO", who);
+    var el = $("theftAlert"), stolen = B.stolen[ev.user_id] && B.stolen[ev.user_id].active;
+    el.innerHTML = "<h3>" + (ev.kind === "recovered" ? "✅ Phone recovered" : ev.kind === "test" ? "🧪 Test theft alert" : "⚠️ Theft alert") + "</h3><p>" + esc(txt) + "</p>" +
+      "<p class='fineprint'>" + esc(new Date(ev.created_at || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })) + (ev.battery != null ? " · battery " + ev.battery + "%" : "") + (ev.lat != null ? " · " + ev.lat.toFixed(5) + ", " + ev.lng.toFixed(5) : "") + "</p>" +
+      (ev.photo_path ? "<img id='taImg' alt='Photo from the front camera' />" : "") +
+      "<div class='x-actions'>" +
+      (ev.lat != null ? "<a class='x-btn x-btn--small x-btn--primary' target='_blank' rel='noopener' href='https://www.google.com/maps?q=" + ev.lat + "," + ev.lng + "'>Open location</a>" : "") +
+      (!isMe && m.lat != null ? "<button class='x-btn x-btn--small' type='button' data-ta='map'>Show on map</button>" : "") +
+      (!isMe && !stolen && ev.kind !== "recovered" && ev.kind !== "test" ? "<button class='x-btn x-btn--small x-btn--red' type='button' data-ta='mark'>Mark stolen</button>" : "") +
+      (!isMe && m.phone ? "<a class='x-btn x-btn--small' href='tel:" + esc(m.phone) + "'>Call</a>" : "") +
+      "<button class='x-btn x-btn--small' type='button' data-ta='close'>Close</button></div>";
+    el.dataset.uid = ev.user_id; el.hidden = false;
+    if (ev.kind !== "recovered" && ev.kind !== "test") vib([600, 200, 600, 200, 600]);
+    if (ev.photo_path) { var u = await B.photoUrl(ev.photo_path); var im = $("taImg"); if (im && u) im.src = u; else if (im) im.remove(); }
+  }
+  $("theftAlert").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-ta]"); if (!b) return;
+    var uid = $("theftAlert").dataset.uid, a = b.dataset.ta;
+    if (a === "close") { $("theftAlert").hidden = true; return; }
+    if (a === "map") { $("theftAlert").hidden = true; openPerson(uid, true); return; }
+    if (a === "mark") { b.disabled = true; try { await B.markStolen(uid); KT.toast("Marked stolen. Their phone now logs every minute."); $("theftAlert").hidden = true; } catch (er) { b.disabled = false; KT.toast(er.message); } }
+  });
 
   /* ---------- offline SOS: no data, so text the circle (native SMS in the app, the SMS app on the web) ---------- */
   var smsSent = false;
@@ -3255,7 +3513,7 @@ window.Backend = (function () {
   setInterval(renderMembers, 30000);
 
   $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", a defence technology company under Motswana Intelligence, founded by Thuto Leseane.";
-  renderPause(); renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount(); renderAvPick(); renderSteps();
+  renderPause(); renderTheftCard(); setTimeout(function () { checkSim(true); flushTheft(); }, 3000); renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount(); renderAvPick(); renderSteps();
   if (B.isNative || window.KStore.get("stepsOn", false)) Steps.start(false);
   B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
 })();

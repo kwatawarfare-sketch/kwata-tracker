@@ -10,6 +10,10 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.telephony.SmsManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
+import java.util.List;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -31,7 +35,8 @@ import java.util.ArrayList;
     name = "KwataNative",
     permissions = {
         @Permission(alias = "sms", strings = { Manifest.permission.SEND_SMS }),
-        @Permission(alias = "bg", strings = { Manifest.permission.ACCESS_BACKGROUND_LOCATION })
+        @Permission(alias = "bg", strings = { Manifest.permission.ACCESS_BACKGROUND_LOCATION }),
+        @Permission(alias = "phone", strings = { Manifest.permission.READ_PHONE_STATE })
     }
 )
 public class KwataNativePlugin extends Plugin {
@@ -126,5 +131,45 @@ public class KwataNativePlugin extends Plugin {
         Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getContext().getPackageName(), null));
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(i);
+    }
+
+    /**
+     * SIM fingerprint for SIM-change alerts. Without READ_PHONE_STATE we only see the SIM's network;
+     * with it we also get subscription ids, which change whenever a different SIM card goes in.
+     */
+    @PluginMethod
+    public void simInfo(PluginCall call) {
+        JSObject r = new JSObject();
+        try {
+            TelephonyManager tm = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm == null) { r.put("state", "NONE"); call.resolve(r); return; }
+            int st = tm.getSimState();
+            String state = st == TelephonyManager.SIM_STATE_READY ? "READY" : st == TelephonyManager.SIM_STATE_ABSENT ? "ABSENT"
+                : st == TelephonyManager.SIM_STATE_NOT_READY ? "NOT_READY" : st == TelephonyManager.SIM_STATE_UNKNOWN ? "UNKNOWN" : "LOCKED";
+            r.put("state", state);
+            r.put("operator", tm.getSimOperator());
+            r.put("operatorName", tm.getSimOperatorName());
+            r.put("country", tm.getSimCountryIso());
+            if (Build.VERSION.SDK_INT >= 22 && getPermissionState("phone") == PermissionState.GRANTED) {
+                SubscriptionManager sm = (SubscriptionManager) getContext().getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+                List<SubscriptionInfo> l = sm != null ? sm.getActiveSubscriptionInfoList() : null;
+                JSArray subs = new JSArray();
+                if (l != null) for (SubscriptionInfo si : l) subs.put(si.getSubscriptionId() + ":" + si.getSimSlotIndex());
+                r.put("subs", subs);
+            }
+        } catch (Exception e) { r.put("error", e.getMessage()); }
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void requestPhone(PluginCall call) {
+        if (getPermissionState("phone") == PermissionState.GRANTED) { call.resolve(); return; }
+        requestPermissionForAlias("phone", call, "phonePermCallback");
+    }
+
+    @PermissionCallback
+    private void phonePermCallback(PluginCall call) {
+        if (getPermissionState("phone") == PermissionState.GRANTED) call.resolve();
+        else call.reject("denied");
     }
 }
