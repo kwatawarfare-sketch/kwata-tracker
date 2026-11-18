@@ -428,6 +428,15 @@
       .x-sosfab::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgb(242 52 44 / 0.35); animation: kt-sosring 2.4s ease-out infinite; pointer-events: none; }
       @keyframes kt-sosring { from { transform: scale(0.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
       @media (prefers-reduced-motion: reduce) { .kt-story__ring.is-sos, .x-sosfab::before { animation: none; } }
+      .x-av.is-stale .x-av__bubble { filter: grayscale(1); opacity: 0.55; }
+      .x-av.is-stale .x-av__name { opacity: 0.7; }
+      .kt-net { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; margin-bottom: 12px; border-radius: 16px; background: color-mix(in srgb, #ff9f0a 16%, var(--fill-primary-on, #fff)); border: 1px solid color-mix(in srgb, #ff9f0a 45%, transparent); }
+      .kt-net span { display: grid; gap: 2px; } .kt-net small { color: var(--text-secondary); font-size: 12.5px; }
+      .kt-pause__opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+      .kt-pause__opts .fineprint { width: 100%; margin: 0; }
+      .kt-pause.is-paused { background: color-mix(in srgb, #ff9f0a 12%, var(--fill-primary-on, #fff)); }
+      .kt-bgfix { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--stroke-primary, #ddd); }
+      .kt-bgfix[hidden], .kt-pause__opts[hidden] { display: none; }
       .kt-switchrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
       .kt-switch { width: 51px; height: 31px; border-radius: 999px; border: 0; padding: 2px; background: var(--fill-tertiary, #ddd); cursor: pointer; transition: background 200ms; }
       .kt-switch i { display: block; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.25); transition: transform 260ms var(--x-spring, ease); }
@@ -525,7 +534,7 @@
               <h1>Kwata Tracker</h1>
               <p class="x-status" id="status" role="status">Ready</p>
             </div>
-            <p class="x-sheet__meta"><span class="kt-handle" id="meHandle"></span><span class="kt-mode">Demo mode — live sync connects to a backend</span></p>
+            <p class="x-sheet__meta"><span class="kt-handle" id="meHandle"></span><span class="kt-mode">Connecting…</span></p>
             <div class="x-segctl" role="tablist" aria-label="Sections">
               <button type="button" role="tab" id="tab-people" data-go="people" aria-controls="panel-people" aria-selected="true"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='9' cy='8' r='3.5'/><path d='M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6'/><circle cx='17' cy='9' r='2.6'/><path d='M17 14.2c2.6.2 4.5 2.2 4.5 5'/></svg>People</button>
               <button type="button" role="tab" id="tab-me" data-go="me" aria-controls="panel-me" aria-selected="false"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z'/><circle cx='12' cy='9.5' r='2.6'/></svg>Me</button>
@@ -552,6 +561,7 @@
                   <button class="x-btn x-btn--primary" type="submit">Save profile</button>
                 </form>
               </div>
+              <div class="kt-net" id="netBanner" role="status" hidden><span><b>Can't connect, retrying…</b><small>Your SOS still works: it texts your circle.</small></span><button class="x-btn x-btn--small" type="button" id="netRetry">Retry</button></div>
               <div class="kt-stories" id="stories" role="list" aria-label="Your circle"></div>
               <div class="x-card" id="todayCard">
                 <div class="kt-today">
@@ -594,6 +604,16 @@
 
             <!-- ME -->
             <div class="x-panel" id="panel-me" role="tabpanel" aria-labelledby="tab-me" hidden>
+              <div class="x-card kt-pause" id="pauseCard">
+                <div class="kt-switchrow"><div><h2 style="margin:0">Location sharing</h2><p id="pauseState" style="margin:4px 0 0">On. Your circle can see where you are.</p></div>
+                <button class="x-btn x-btn--small" type="button" id="resumeBtn" hidden>Resume</button></div>
+                <div class="kt-pause__opts" id="pauseOpts">
+                  <span class="fineprint">Pause, with your PIN:</span>
+                  <button class="x-btn x-btn--small" type="button" data-pause="60">1 hour</button>
+                  <button class="x-btn x-btn--small" type="button" data-pause="480">8 hours</button>
+                  <button class="x-btn x-btn--small" type="button" data-pause="0">Until I resume</button>
+                </div>
+              </div>
               <div class="x-em" id="emergency" hidden>
                 <p class="x-em__head">Tracking active — your location is being logged</p>
                 <p class="x-banner x-banner--warn" id="emNoContacts" hidden>No trusted contacts yet. Use Share or Call emergency.</p>
@@ -704,6 +724,11 @@
           <div class="x-card">
             <div class="kt-switchrow"><div><h2 style="margin:0">Background tracking</h2><p id="bgState" style="margin:4px 0 0"></p></div>
             <button class="kt-switch" id="bgToggle" type="button" role="switch" aria-checked="true" aria-label="Background tracking"><i></i></button></div>
+            <div class="kt-bgfix" id="bgFix" hidden>
+              <p class="fineprint" id="bgPerm"></p>
+              <div class="x-actions"><button class="x-btn x-btn--small" type="button" id="bgAllow">Allow all the time</button>
+              <button class="x-btn x-btn--small" type="button" id="bgBattery">Stop battery saver killing it</button></div>
+            </div>
           </div>
           <div class="x-card" id="avCard">
             <h2>Your 3D avatar</h2>
@@ -731,8 +756,7 @@
           </div>
           <div class="x-card">
             <h2>Sync</h2>
-            <p><span class="kt-mode">Demo mode — live sync connects to a backend</span></p>
-            <button class="x-btn x-btn--small" type="button" id="simSOS" hidden>Simulate a member SOS (demo)</button>
+            <p><span class="kt-mode">Connecting…</span></p>
           </div>
           <div class="x-card">
             <h2>Help</h2>
@@ -1382,7 +1406,7 @@ window.Backend = (function () {
   var AUTH_CB = "kwata://auth-callback";
   function backTo() { return NATIVE ? AUTH_CB : PUBLIC_URL; }
   var B = {
-    mode: (SUPABASE_URL && SUPABASE_ANON_KEY) ? "supabase" : "demo",
+    mode: "supabase",
     me: { id: "me", avatar: window.KStore.get("avatar", ""), username: window.KStore.get("username", ""), name: window.KStore.get("name", ""), phone: window.KStore.get("phone", ""), status: "safe" },
     members: [],
     invites: [], /* pending only: { id, incoming, user: {id, username, name, phone}, created } */
@@ -1400,48 +1424,8 @@ window.Backend = (function () {
   B.cleanUser = cleanUser;
   function setStatus(t) { B.statusText = t; B.emit({ type: "status", text: t }); }
 
-  /* ---------- DEMO ---------- */
-  var Demo = {
-    timers: [],
-    init: function () {
-      var C = { lat: -24.6282, lng: 25.9231 };
-      var saved = window.KStore.get("demoMembers", null);
-      B.members = Array.isArray(saved) && saved.length ? saved : [
-        { id: "d-mpho", username: "mpho", name: "Mpho Kgosi", phone: "+26771000001", lat: C.lat + 0.006, lng: C.lng + 0.004 },
-        { id: "d-naledi", username: "naledi", name: "Naledi Molefe", phone: "+26772000002", lat: C.lat - 0.004, lng: C.lng + 0.009 },
-        { id: "d-thabo", username: "thabo", name: "Thabo Sebina", phone: "+26773000003", lat: C.lat + 0.011, lng: C.lng - 0.007 }
-      ];
-      B.members.forEach(function (m) { m.status = "safe"; m.lastSeen = Date.now() - Math.round(Math.random() * 90000); m.alerted = false; if (m.battery == null) m.battery = 30 + Math.round(Math.random() * 65); });
-      setStatus("Demo mode — live sync connects to a backend");
-      var out = window.KStore.get("demoOutgoing", []);
-      B.invites = Array.isArray(out) ? out : [];
-      B.emit({ type: "members" }); B.emit({ type: "invites" });
-      /* one simulated incoming invite, to show the consent flow */
-      if (!window.KStore.get("demoInviteDone", false)) Demo.timers.push(setTimeout(function () {
-        var inv = { id: "di-lesedi", incoming: true, created: Date.now(), user: { id: "d-lesedi", username: "lesedi", name: "Lesedi Tau", phone: "+26774000004" } };
-        if (B.member(inv.user.id) || B.invite(inv.id)) return;
-        B.invites.unshift(inv); B.emit({ type: "invites" }); B.emit({ type: "invite", from: inv.user });
-      }, 4000));
-      Demo.timers.push(setInterval(function () {
-        B.members.forEach(function (m) {
-          m.lat += (Math.random() - 0.5) * 0.0006; m.lng += (Math.random() - 0.5) * 0.0006;
-          if (Math.random() < 0.7) m.lastSeen = Date.now();
-        });
-        B.emit({ type: "members" });
-      }, 5000));
-      (function loop() {
-        Demo.timers.push(setTimeout(function () {
-          var m = B.members[Math.floor(Math.random() * B.members.length)];
-          if (m) B.emit({ type: "buzz", from: m });
-          loop();
-        }, 60000 + Math.random() * 60000));
-      })();
-    },
-    persist: function () {
-      window.KStore.set("demoMembers", B.members.map(function (m) { return { id: m.id, username: m.username, name: m.name, phone: m.phone, lat: m.lat, lng: m.lng }; }));
-      window.KStore.set("demoOutgoing", B.invites.filter(function (i) { return !i.incoming; }));
-    }
-  };
+  /* old builds kept fake demo people on the device: wipe them */
+  ["demoMembers", "demoOutgoing", "demoInviteDone"].forEach(function (k) { window.KStore.set(k, undefined); });
 
   /* ---------- SUPABASE ---------- */
   var Sb = {
@@ -1565,6 +1549,8 @@ window.Backend = (function () {
         return { id: p.id, username: p.username, name: p.name, phone: p.phone, avatar: p.avatar || "", steps: l && l.steps != null ? l.steps : null, stepsDay: l ? l.steps_day : null, lat: l ? l.lat : null, lng: l ? l.lng : null,
           lastSeen: l ? Date.parse(l.updated_at) : null, battery: l ? l.battery : null, status: sos[p.id] ? "sos" : (l && l.status) || "safe", alerted: B.alerted };
       });
+      /* remembered on the phone so an SOS can still text them with no data */
+      window.KStore.set("circlePhones", B.members.filter(function (m) { return m.phone; }).map(function (m) { return { name: m.name || m.username, phone: m.phone }; }));
       B.emit({ type: "members" });
     },
     loadInvites: async function () {
@@ -1625,17 +1611,26 @@ window.Backend = (function () {
   };
 
   /* ---------- public methods ---------- */
+  /* connect, and keep retrying (5 s, 10 s, 20 s ... 60 s) until the server answers. No fake data, ever. */
+  B.offline = false;
+  var retryT = null, retryN = 0;
   B.start = async function () {
-    if (B.mode === "supabase") {
-      setStatus("Connecting…");
-      try {
-        await Promise.race([Sb.init(), new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 15000); })]);
-        return;
-      }
-      catch (e) { console.error(e); B.mode = "demo"; B.emit({ type: "error", message: "Live sync failed (" + (e.message || e) + "). Running in demo mode." }); }
+    clearTimeout(retryT);
+    if (Sb.ready) { B.offline = false; B.emit({ type: "net", offline: false }); return; }
+    setStatus("Connecting…");
+    try {
+      Sb.initP = Sb.initP || Sb.init().catch(function (e) { Sb.initP = null; throw e; });
+      await Promise.race([Sb.initP, new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 15000); })]);
+      retryN = 0; B.offline = false; B.emit({ type: "net", offline: false });
+    } catch (e) {
+      console.error(e); B.offline = true;
+      var wait = Math.min(60, 5 * Math.pow(2, retryN++));
+      setStatus("Can't connect, retrying…"); B.emit({ type: "net", offline: true });
+      retryT = setTimeout(B.start, wait * 1000);
     }
-    Demo.init();
   };
+  B.retry = function () { retryN = 0; return B.start(); };
+  window.addEventListener("online", function () { if (B.offline) B.retry(); });
   /* ---------- accounts: Google + email/password ---------- */
   function need() { if (B.mode !== "supabase" || !Sb.client) throw new Error("Can't reach the Kwata server. Check your connection."); return Sb.client.auth; }
   function nice(e) {
@@ -1739,22 +1734,10 @@ window.Backend = (function () {
       await Sb.loadInvites();
       return p;
     }
-    var u = q.username ? cleanUser(q.username) : "", ph = q.phone ? cleanPhone(q.phone) : "";
-    if (u && !/^[a-z0-9_]{3,20}$/.test(u)) throw new Error("Usernames are 3–20 letters, numbers or _");
-    if (ph && ph.replace(/\D/g, "").length < 8) throw new Error("Enter a full number with country code");
-    if (!u && !ph) throw new Error("Enter a username or phone number");
-    if (u && u === B.me.username) throw new Error("That's you");
-    var same = function (m) { return (u && m.username === u) || (ph && m.phone === ph); };
-    if (B.members.filter(same)[0]) throw new Error("Already in your circle");
-    var dp = pendingWith(same);
-    if (dp) throw pendingError(dp);
-    var user = { id: "d-" + Date.now(), username: u || ("user" + ph.slice(-4)), name: q.name || (u ? u.charAt(0).toUpperCase() + u.slice(1) : ph), phone: ph };
-    B.invites.push({ id: "do-" + Date.now(), incoming: false, created: Date.now(), user: user });
-    Demo.persist(); B.emit({ type: "invites" });
-    return user;
+    throw new Error("Can't connect to Kwata right now. Check your internet and try again.");
   };
   B.addMember = B.sendInvite;
-  function live() { if (B.mode === "demo") throw new Error("Offline demo mode: connect to the internet and reopen the app"); if (!Sb.uid) throw new Error("Connecting to Kwata… try again in a moment"); }
+  function live() { if (B.offline || !Sb.client) throw new Error("Can't connect to Kwata right now. Check your internet."); if (!Sb.uid) throw new Error("Connecting to Kwata… try again in a moment"); }
   function rpcErr(e) { var m = (e && e.message) || "Something went wrong"; if (/expired|not found/.test(m)) return new Error("That code didn't work. Check it, or ask for a new one."); if (/own code/.test(m)) return new Error("That's your own code"); if (/profile first/.test(m)) return new Error("Save your name first"); return new Error(m); }
   B.myCode = async function (fresh) {
     live(); if (!B.me.username) throw new Error("Save your name first");
@@ -1792,11 +1775,7 @@ window.Backend = (function () {
       await Sb.loadInvites(); await Sb.loadCircle();
       return inv.user;
     }
-    B.invites = B.invites.filter(function (i) { return i !== inv; });
-    var m = Object.assign({}, inv.user, { lat: -24.6282 + (Math.random() - 0.5) * 0.03, lng: 25.9231 + (Math.random() - 0.5) * 0.03, lastSeen: Date.now(), status: "safe", alerted: B.alerted });
-    B.members.push(m); window.KStore.set("demoInviteDone", true); Demo.persist();
-    B.emit({ type: "invites" }); B.emit({ type: "members" });
-    return inv.user;
+    throw new Error("Can't connect to Kwata right now. Try again in a moment.");
   };
   B.declineInvite = async function (id) {
     var inv = B.invite(id);
@@ -1807,9 +1786,7 @@ window.Backend = (function () {
       await Sb.loadInvites();
       return inv.user;
     }
-    B.invites = B.invites.filter(function (i) { return i !== inv; });
-    window.KStore.set("demoInviteDone", true); Demo.persist(); B.emit({ type: "invites" });
-    return inv.user;
+    throw new Error("Can't connect to Kwata right now. Try again in a moment.");
   };
   B.removeMember = async function (id) {
     if (B.mode === "supabase" && Sb.uid) {
@@ -1819,7 +1796,7 @@ window.Backend = (function () {
       await Sb.client.from("circle_invites").delete().or("and(from_id.eq." + Sb.uid + ",to_id.eq." + id + "),and(from_id.eq." + id + ",to_id.eq." + Sb.uid + ")");
       await Sb.loadCircle(); await Sb.loadInvites(); return;
     }
-    B.members = B.members.filter(function (m) { return m.id !== id; }); Demo.persist(); B.emit({ type: "members" });
+    throw new Error("Can't connect to Kwata right now. Try again in a moment.");
   };
   B.shareLocation = async function (loc) {
     B.me.lat = loc.lat; B.me.lng = loc.lng;
@@ -1867,10 +1844,7 @@ window.Backend = (function () {
       if (r.error) throw new Error(r.error.message);
       return targets;
     }
-    targets.forEach(function (m) {
-      if (Math.random() < 0.6) setTimeout(function () { if (B.member(m.id)) B.emit({ type: "buzz", from: m }); }, 3000 + Math.random() * 5000);
-    });
-    return targets;
+    throw new Error("Can't connect to Kwata right now. Buzz needs the internet.");
   };
   B.sendSOS = async function (active, loc) {
     B.me.status = active ? "sos" : "safe"; B.alerted = !!active;
@@ -1881,15 +1855,10 @@ window.Backend = (function () {
         if (active) await Sb.client.from("sos_events").insert({ user_id: Sb.uid, lat: loc ? loc.lat : null, lng: loc ? loc.lng : null, active: true });
         else await Sb.client.from("sos_events").update({ active: false }).eq("user_id", Sb.uid).eq("active", true);
         if (loc) await B.shareLocation(loc);
-      } catch (e) { B.emit({ type: "error", message: "Could not reach the server — use WhatsApp/SMS too." }); }
+        return true;
+      } catch (e) { B.emit({ type: "error", message: "Could not reach the server — texting your circle instead." }); return false; }
     }
-  };
-  /* demo-only helper to preview how a member SOS looks */
-  B.simulateMemberSOS = function () {
-    if (B.mode !== "demo" || !B.members.length) return;
-    var m = B.members[Math.floor(Math.random() * B.members.length)];
-    m.status = m.status === "sos" ? "safe" : "sos"; m.lastSeen = Date.now();
-    B.emit({ type: "sos", member: m, active: m.status === "sos" }); B.emit({ type: "members" });
+    return false;
   };
   return B;
 })();
@@ -2324,9 +2293,14 @@ window.Backend = (function () {
   /* ---------- PIN keypad ---------- */
   var entry = "";
   function drawDots() { document.querySelectorAll("#pinDots span").forEach(function (d, i) { d.classList.toggle("is-on", i < entry.length); }); }
-  function openPad() { entry = ""; drawDots(); $("pinErr").textContent = ""; $("pinModal").hidden = false; var k = document.querySelector("#keys [data-d='1']"); if (k) k.focus(); }
+  var padCb = null, padFail = null;
+  function openPad(cb, sub, onFail) {
+    padCb = typeof cb === "function" ? cb : null; padFail = typeof onFail === "function" ? onFail : null;
+    document.querySelector("#pinModal .x-pin__sub").textContent = sub || "Your 4-digit PIN stops tracking";
+    entry = ""; drawDots(); $("pinErr").textContent = ""; $("pinModal").hidden = false; var k = document.querySelector("#keys [data-d='1']"); if (k) k.focus();
+  }
   function closePad() { $("pinModal").hidden = true; entry = ""; }
-  $("stopBtn").addEventListener("click", openPad);
+  $("stopBtn").addEventListener("click", function () { openPad(null); });
   $("keys").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     var k = b.dataset.k;
@@ -2336,8 +2310,9 @@ window.Backend = (function () {
     if (!d || entry.length >= 4) return;
     entry += d; $("pinErr").textContent = ""; drawDots();
     if (entry.length === 4) {
-      if (entry === S.pin) { closePad(); stopEmergency(); }
+      if (entry === S.pin) { var cb = padCb; padCb = null; closePad(); if (cb) cb(); else stopEmergency(); }
       else {
+        if (padFail) try { padFail(); } catch (er) {}
         $("pinErr").textContent = "Wrong PIN — try again"; var dots = $("pinDots");
         dots.classList.remove("is-shake"); void dots.offsetWidth; dots.classList.add("is-shake");
         if (navigator.vibrate) try { navigator.vibrate(300); } catch (er) {}
@@ -2356,7 +2331,7 @@ window.Backend = (function () {
   /* ---------- init ---------- */
   window.KT = { toast: toast, copy: copy, go: go, last: function () { return last; }, isActive: function () { return active; },
     map: ensureMap, sheet: setDetent, detent: function () { return detent; }, recenter: recenter, unfollow: function () { follow = false; },
-    sos: sosNow, locate: locate, navWatch: navWatch, mapPad: mapPad };
+    sos: sosNow, locate: locate, navWatch: navWatch, mapPad: mapPad, askPin: openPad, contacts: function () { return S.contacts.slice(); }, sosText: message, me: function () { return last; } };
   ensureMap();
   /* opened from the SOS widget / shortcut: index.html?sos=1 (or #sos) starts the countdown at once */
   try {
@@ -2412,13 +2387,13 @@ window.Backend = (function () {
 
   /* ---------- mode label ---------- */
   function renderMode() {
-    var demo = B.mode === "demo";
     document.querySelectorAll(".kt-mode").forEach(function (el) {
-      el.textContent = demo ? "Demo mode — live sync connects to a backend" : (B.statusText || "Live sync");
-      el.classList.toggle("is-live", !demo);
+      el.textContent = B.statusText || "Connecting…";
+      el.classList.toggle("is-live", !B.offline && /live/i.test(B.statusText || ""));
     });
-    $("simSOS").hidden = !demo;
+    $("netBanner").hidden = !B.offline;
   }
+  $("netRetry").addEventListener("click", function () { $("netRetry").disabled = true; setTimeout(function () { $("netRetry").disabled = false; }, 3000); B.retry(); });
 
   /* ---------- members ---------- */
   var GRADS = ["#a6abb7,#858a96", "#ffb36b,#ff7a3d", "#7fd88f,#2fb653", "#6cb8ff,#0a7aff", "#c79bff,#9558ff", "#ff93b5,#ff4f81", "#62d6d1,#1ea7a1", "#ffd36b,#f0a020"];
@@ -2440,7 +2415,9 @@ window.Backend = (function () {
   }
   function stepsOf(m) { return m.steps != null && m.stepsDay === Steps.dayStr() ? m.steps : (m.steps != null && m.lastSeen && Date.now() - m.lastSeen < 6 * 3600000 ? m.steps : null); }
   function fmtN(n) { try { return Number(n).toLocaleString(); } catch (e) { return String(n); } }
-  function subText(m) { var st = stepsOf(m); return (m.status === "sos" ? "SOS · " : "") + (isWalking(m) ? "Walking · " : "") + ago(m.lastSeen) + (m.lat != null ? " · " + dist(m) : " · no location yet") + (st ? " · " + fmtN(st) + " steps" : ""); }
+  function isStale(m) { return m.status !== "sos" && (!m.lastSeen || Date.now() - m.lastSeen > 10 * 60000); }
+  function seenText(m) { return m.status === "paused" ? "Paused sharing · last seen " + ago(m.lastSeen) : isStale(m) ? "Last seen " + ago(m.lastSeen) : ago(m.lastSeen); }
+  function subText(m) { var st = stepsOf(m); return (m.status === "sos" ? "SOS · " : "") + (isWalking(m) && !isStale(m) ? "Walking · " : "") + seenText(m) + (m.lat != null ? " · " + dist(m) : " · no location yet") + (st && !isStale(m) ? " · " + fmtN(st) + " steps" : ""); }
   var ICON = {
     dir: "<svg viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d='M21.7 11.3l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5z'/></svg>",
     chev: "<svg class='x-chev' viewBox='0 0 8 14' aria-hidden='true'><path d='M1 1l6 6-6 6' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>",
@@ -2646,9 +2623,10 @@ window.Backend = (function () {
   }
   function fillAv(d, m) {
     var sos = m.status === "sos", walk = isWalking(m), st = stepsOf(m), key = [sos, m.name, m.username, m.avatar || "", m.photo || m.avatar_url || "", walk, st].join("|");
-    d.classList.toggle("is-walk", walk && !sos);
+    d.classList.toggle("is-walk", walk && !sos && !isStale(m));
+    d.classList.toggle("is-stale", isStale(m));
     d.dataset.id = m.id;
-    d.setAttribute("aria-label", (m.name || at(m)) + (sos ? ", SOS" : "") + ", " + ago(m.lastSeen) + ". Show details");
+    d.setAttribute("aria-label", (m.name || at(m)) + (sos ? ", SOS" : "") + ", " + seenText(m) + ". Show details");
     if (d._k === key) return; d._k = key;
     d.classList.toggle("is-sos", sos);
     d.innerHTML = "<span class='x-av__bubble'>" + face(m, "x-av__face") + "</span><span class='x-av__name'>" + esc(sos ? "SOS · " + first(m) : first(m)) + "</span>" +
@@ -2825,7 +2803,6 @@ window.Backend = (function () {
   document.addEventListener("kt:pos", function () { dirCheck(); });
 
   /* ---------- map style card, 3D, settings ---------- */
-  $("simSOS").addEventListener("click", function () { B.simulateMemberSOS(); });
   function renderLayer() {
     var cur = MapProvider.layer(), three = MapProvider.is3D(), can3d = MapProvider.supports3D();
     document.querySelectorAll("[data-layer]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.layer === cur)); });
@@ -2995,8 +2972,8 @@ window.Backend = (function () {
     if (!B.isNative || !P || BG.id || !window.KStore.get("bgOn", true)) { renderBg(); return; }
     try {
       BG.id = await P.addWatcher({
-        backgroundTitle: "Kwata is keeping you safe",
-        backgroundMessage: "Sharing your location with your circle. Tap to open.",
+        backgroundTitle: "Sharing location",
+        backgroundMessage: "Kwata is sharing your location with your circle. Tap to open.",
         requestPermissions: true, stale: false, distanceFilter: 10
       }, function (loc, err) {
         if (err) { if (err.code === "NOT_AUTHORIZED") KT.toast("Allow location for Kwata so your circle can see you"); return; }
@@ -3022,6 +2999,22 @@ window.Backend = (function () {
     renderBg();
   });
   window.KTbackground = startBackground;
+  /* Android: "Allow all the time" + battery-optimisation exemption keep tracking alive when the phone sleeps */
+  function KN() { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KwataNative; }
+  async function renderBgFix() {
+    var N = KN(); if (!B.isNative || !N) return;
+    try {
+      var st = await N.status();
+      $("bgFix").hidden = !!(st.background && st.battery);
+      $("bgPerm").textContent = (st.background ? "✓ Location: allowed all the time. " : "Location is only allowed while Kwata is open. Choose \"Allow all the time\" so tracking survives when the phone locks. ") +
+        (st.battery ? "✓ Battery saver won't stop Kwata." : "Battery saver may stop tracking; let Kwata run unrestricted.");
+      $("bgAllow").hidden = !!st.background; $("bgBattery").hidden = !!st.battery;
+    } catch (e) {}
+  }
+  $("bgAllow").addEventListener("click", function () { var N = KN(); if (N) N.requestBackground().catch(function () {}).then(function () { setTimeout(renderBgFix, 800); }); });
+  $("bgBattery").addEventListener("click", function () { var N = KN(); if (N) N.ignoreBattery().catch(function () {}); });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") renderBgFix(); });
+  setTimeout(renderBgFix, 1500);
 
   /* ---------- home-screen widget + its buttons ---------- */
   var wTimer = null;
@@ -3044,11 +3037,11 @@ window.Backend = (function () {
       (meA ? "<img alt='' src='" + meA + "' />" : "<span style='font-size:26px'>🙂</span>") + "</span></span><span class='kt-story__name'>You</span>" +
       "<span class='kt-story__sub'>" + (Steps.today ? fmtN(Steps.today) + " steps" : meA ? "My map" : "Pick avatar") + "</span></button>";
     B.members.forEach(function (m) {
-      var a = avSrc(m.avatar), sos = m.status === "sos", walk = isWalking(m), fresh = m.lastSeen && Date.now() - m.lastSeen < 15 * 60000;
+      var a = avSrc(m.avatar), sos = m.status === "sos", walk = isWalking(m), fresh = !isStale(m);
       var cls = sos ? " is-sos" : walk ? " is-walk" : !fresh ? " is-old" : "";
       h += "<button class='kt-story' type='button' role='listitem' data-story='" + esc(m.id) + "' aria-label='" + esc((m.name || at(m)) + ", " + subText(m)) + "'><span class='kt-story__ring" + cls + "'><span class='kt-story__in' style='" + (a ? "" : "background:" + grad(m)) + "'>" +
         (a ? "<img alt='' src='" + a + "' />" : esc(initials(m))) + "</span>" + (fresh && !sos ? "<span class='kt-story__dot'></span>" : "") + "</span>" +
-        "<span class='kt-story__name'>" + esc(first(m)) + "</span><span class='kt-story__sub'>" + esc(sos ? "SOS" : walk ? "Walking" : ago(m.lastSeen)) + "</span></button>";
+        "<span class='kt-story__name'>" + esc(first(m)) + "</span><span class='kt-story__sub'>" + esc(sos ? "SOS" : m.status === "paused" ? "Paused" : walk && fresh ? "Walking" : ago(m.lastSeen)) + "</span></button>";
     });
     h += "<button class='kt-story' type='button' role='listitem' data-story='add'><span class='kt-story__ring is-add'><span class='kt-story__in'>+</span></span><span class='kt-story__name'>Add</span><span class='kt-story__sub'>&nbsp;</span></button>";
     el.innerHTML = h;
@@ -3179,7 +3172,7 @@ window.Backend = (function () {
     else if (ev.type === "invites") renderInvites();
     else if (ev.type === "invite") { vib([80, 60, 80]); KT.toast("📩 " + at(ev.from) + " invited you to their circle — see Invites"); }
     else if (ev.type === "me") { renderMe(); renderAvPick(); renderSteps(); meAvatar(); }
-    else if (ev.type === "status") renderMode();
+    else if (ev.type === "status" || ev.type === "net") renderMode();
     else if (ev.type === "error") { renderMode(); KT.toast(ev.message); }
     else if (ev.type === "buzz") { buzzAlert(); KT.toast("I love you ❤️ " + (ev.from && ev.from.name ? ev.from.name : at(ev.from)) + " buzzed you"); }
     else if (ev.type === "auth") onAuthEv(ev);
@@ -3192,19 +3185,69 @@ window.Backend = (function () {
 
   /* ---------- hooks from the core app ---------- */
   var batt = null;
+  /* ---------- pause sharing (PIN needed to pause, not to resume; an SOS always overrides) ---------- */
+  function pausedUntil() { var v = window.KStore.get("pausedUntil", null); if (v == null) return null; if (v !== -1 && Date.now() > v) { window.KStore.set("pausedUntil", null); return null; } return v; }
+  function isPaused() { return pausedUntil() != null && !KT.isActive(); }
+  function renderPause() {
+    var v = pausedUntil(), on = v != null;
+    $("pauseCard").classList.toggle("is-paused", on);
+    $("pauseState").textContent = !on ? "On. Your circle can see where you are." : v === -1 ? "Paused until you resume. Your circle sees \"Paused sharing\"." : "Paused until " + new Date(v).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ". Your circle sees \"Paused sharing\".";
+    $("resumeBtn").hidden = !on; $("pauseOpts").hidden = on;
+  }
+  function sendPausedRow() { var p = KT.last(); B.me.status = "paused"; if (p) B.shareLocation({ lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null }); }
+  $("pauseOpts").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-pause]"); if (!b) return;
+    var mins = +b.dataset.pause;
+    KT.askPin(function () {
+      window.KStore.set("pausedUntil", mins ? Date.now() + mins * 60000 : -1);
+      sendPausedRow(); renderPause(); KT.toast("Sharing paused");
+    }, "Enter your PIN to pause sharing", function () { document.dispatchEvent(new CustomEvent("kt:badpin", { detail: { why: "pause" } })); });
+  });
+  $("resumeBtn").addEventListener("click", function () { window.KStore.set("pausedUntil", null); B.me.status = "safe"; lastShare = 0; renderPause(); document.dispatchEvent(new CustomEvent("kt:pos")); KT.toast("Sharing is back on"); });
+  setInterval(function () { var was = $("pauseCard").classList.contains("is-paused"); renderPause(); if (was && pausedUntil() == null) { B.me.status = "safe"; lastShare = 0; document.dispatchEvent(new CustomEvent("kt:pos")); } }, 30000);
+
+  /* ---------- offline SOS: no data, so text the circle (native SMS in the app, the SMS app on the web) ---------- */
+  var smsSent = false;
+  function sosNumbers() {
+    var seen = {}, out = [];
+    B.members.map(function (m) { return m.phone; }).concat((window.KStore.get("circlePhones", []) || []).map(function (c) { return c.phone; }), KT.contacts().map(function (c) { return c.phone; }))
+      .forEach(function (n) { n = String(n || "").replace(/[^\d+]/g, ""); if (n.replace(/\D/g, "").length >= 7 && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
+  function sosSms() {
+    if (smsSent) return; smsSent = true;
+    var nums = sosNumbers();
+    if (!nums.length) { KT.toast("No data and no phone numbers saved. Add numbers in Settings."); return; }
+    var go = function () {
+      var who = B.me.name || (B.me.username ? "@" + B.me.username : "A Kwata user");
+      var text = "SOS from " + who + ". " + KT.sosText() + " Battery " + (batt ? Math.round(batt.level * 100) + "%" : "unknown") + ". (Kwata Tracker)";
+      var N = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.KwataNative;
+      var fallback = function () { location.href = "sms:" + nums.join(",") + "?body=" + encodeURIComponent(text); };
+      if (B.isNative && N) N.sendSms({ numbers: nums, text: text }).then(function (r) { KT.toast("SOS texted to " + ((r && r.sent) || nums.length) + " people"); }).catch(fallback);
+      else fallback();
+    };
+    /* wait up to 25 s for a GPS fix so the text carries a location */
+    var t0 = Date.now();
+    (function wait() { var p = KT.last(); if ((p && Date.now() - p.time.getTime() < 120000) || Date.now() - t0 > 25000) go(); else setTimeout(wait, 1000); })();
+  }
+  window.KTsosSms = function () { smsSent = false; sosSms(); };
+
   try { if (navigator.getBattery) navigator.getBattery().then(function (b) { batt = b; }).catch(function () {}); } catch (e) {}
   var lastShare = 0;
   document.addEventListener("kt:pos", function () {
     var p = KT.last(); if (!p) return;
+    if (isPaused()) { renderMembers(); return; }
     var now = Date.now();
     if (!KT.isActive() && now - lastShare < 15000) { renderMembers(); return; }
     lastShare = now;
     B.shareLocation({ lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null, steps: Steps.source ? Steps.today : null, stepsDay: Steps.dayStr() });
     renderMembers();
   });
-  document.addEventListener("kt:sos", function (e) {
+  document.addEventListener("kt:sos", async function (e) {
     var p = KT.last();
-    B.sendSOS(e.detail.active, p ? { lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null } : null);
+    if (e.detail.active) { smsSent = false; if (pausedUntil() != null) { window.KStore.set("pausedUntil", null); renderPause(); } }
+    var ok = (navigator.onLine !== false && !B.offline) ? await B.sendSOS(e.detail.active, p ? { lat: p.lat, lng: p.lng, accuracy: p.acc, battery: batt ? Math.round(batt.level * 100) : null } : null) : (B.sendSOS(e.detail.active, null), false);
+    if (e.detail.active && !ok) sosSms();
   });
   document.addEventListener("kt:screen", function (e) {
     if (e.detail === "people") renderInvite();
@@ -3212,7 +3255,7 @@ window.Backend = (function () {
   setInterval(renderMembers, 30000);
 
   $("madeBy").textContent = "Kwata Tracker · Built by " + COMPANY_NAME + ", a defence technology company under Motswana Intelligence, founded by Thuto Leseane.";
-  renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount(); renderAvPick(); renderSteps();
+  renderPause(); renderMe(); renderMode(); renderMembers(); renderInvites(); renderAccount(); renderAvPick(); renderSteps();
   if (B.isNative || window.KStore.get("stepsOn", false)) Steps.start(false);
   B.start().then(function () { renderMode(); renderMe(); renderMembers(); checkInvite(); }, function () { renderMode(); checkInvite(); });
 })();

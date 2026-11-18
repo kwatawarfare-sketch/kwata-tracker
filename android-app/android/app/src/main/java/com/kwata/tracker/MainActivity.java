@@ -33,6 +33,7 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(StepsPlugin.class);
         registerPlugin(WidgetBridgePlugin.class);
+        registerPlugin(KwataNativePlugin.class);
         super.onCreate(savedInstanceState);
         // Cold start from the widget or shortcut: fire once the page has loaded.
         pendingSos = savedInstanceState == null && isSos(getIntent());
